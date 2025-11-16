@@ -65,7 +65,10 @@
       "Bash(\"./venv/Scripts/pip.exe\" install tavily-python)",
       "Bash(\"./venv/Scripts/python.exe\" -c \"from tavily import TavilyClient; print(''Tavily import successful'')\")",
       "Bash(\"./venv/Scripts/python.exe\" -m cli.main start --prd ./test-inputs/prd.md --design-docs ./test-inputs/design-docs --output ./outputs)",
-      "mcp__serena__think_about_collected_information"
+      "mcp__serena__think_about_collected_information",
+      "Bash(timeout 90 bash:*)",
+      "Bash(printf:*)",
+      "Bash(tee:*)"
     ],
     "deny": [],
     "ask": []

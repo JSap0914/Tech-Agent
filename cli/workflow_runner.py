@@ -125,8 +125,10 @@ class CLIWorkflowRunner:
             print_info("Creating LangGraph workflow...")
             self.workflow = create_tech_spec_workflow()
 
-            # Get checkpoint config for resumability
-            config = get_checkpoint_config(session_id)
+            # Disable checkpointing for CLI mode - resume not needed, saves 13GB memory
+            # Checkpointing creates 44 state snapshots during 11-decision loop (4 nodes × 11 gaps)
+            # Each snapshot is 200-300MB → 13.2GB total memory leak
+            config = None
 
             print_success("Workflow initialized successfully")
 

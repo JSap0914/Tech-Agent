@@ -67,11 +67,17 @@ class DecisionHandler:
                 idx = int(choice) - 1
                 selected_option = options[idx]
 
-                # Get optional reasoning
-                reasoning = Prompt.ask(
-                    "\n[dim]Reasoning for your choice (optional, press Enter to skip)[/dim]",
-                    default=""
-                )
+                # Get optional reasoning (with EOF handling)
+                try:
+                    reasoning = Prompt.ask(
+                        "\n[dim]Reasoning for your choice (optional, press Enter to skip)[/dim]",
+                        default=""
+                    )
+                except (EOFError, KeyboardInterrupt):
+                    # Handle EOF or Ctrl+C gracefully - reasoning is optional
+                    reasoning = ""
+                    logger.info("Reasoning prompt skipped (EOF or interrupt)")
+
 
                 # Determine confidence
                 confidence = "high" if selected_option.get("recommended", False) else "medium"
@@ -131,14 +137,32 @@ class DecisionHandler:
                     continue
 
             elif choice == "search":
-                # Custom technology search
-                custom_tech = Prompt.ask("\n[cyan]Enter technology name to search[/cyan]")
+                # Custom technology selection when automated research is unavailable
+                custom_tech = Prompt.ask("\n[cyan]Enter technology name to evaluate[/cyan]").strip()
+                if not custom_tech:
+                    print_warning("Please provide a technology name to continue.")
+                    continue
 
-                print_warning(
-                    f"Custom search for '{custom_tech}' not yet implemented in CLI.\n"
-                    f"Please select from the provided options (1-3) or use 'ai' for recommendation."
+                custom_reason = Prompt.ask(
+                    "\n[dim]Why is this technology a good fit? (optional)[/dim]",
+                    default=""
                 )
-                continue
+
+                decision = {
+                    "category": category,
+                    "selected_technology": custom_tech,
+                    "reasoning": custom_reason or "Manual selection provided during CLI run",
+                    "confidence": "medium",
+                    "custom_requirements": None
+                }
+
+                logger.info(
+                    "user_custom_technology_selected",
+                    category=category,
+                    technology=custom_tech
+                )
+
+                return decision
 
     def handle_conflicts(self, conflicts: List[Dict]) -> bool:
         """

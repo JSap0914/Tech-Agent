@@ -245,15 +245,41 @@ async def present_options_node(state: TechSpecState) -> TechSpecState:
 
             return state
 
-        # Format options for presentation
-        message = _format_options_message(next_research)
+        # Ensure options exist (fallback to PRD suggestions if needed)
+        fallback_used = False
+        if not next_research.get("options"):
+            gap_info = _find_gap_by_category(
+                state.get("identified_gaps", []),
+                next_research["category"]
+            )
+            next_research["options"] = _build_fallback_options(
+                category=next_research["category"],
+                gap=gap_info,
+                error_message=next_research.get("error")
+            )
+            fallback_used = True
+
+        if not next_research["options"]:
+            logger.error(
+                "No technology options available after fallback",
+                session_id=state["session_id"],
+                category=next_research["category"]
+            )
+            raise RuntimeError(
+                f"No technology options available for {next_research['category']}."
+            )
+
+        # Format options for presentation - Skip in CLI mode to save memory
+        # The formatted message is ~10-50KB per category and was being stored in state
+        # CLI mode displays options directly via terminal_ui, doesn't need this message
+        # message = _format_options_message(next_research)  # Commented out for memory optimization
 
         # Update state
+        tech_options = dict(state.get("technology_options", {}))
+        tech_options[next_research["category"]] = next_research["options"]
         state.update({
             "current_research_category": next_research["category"],
-            "technology_options": {
-                next_research["category"]: next_research["options"]
-            },
+            "technology_options": tech_options,
             "paused": True,  # Wait for user decision
             "current_stage": "present_options",
             "progress_percentage": 40.0 + (state["completed_decisions"] / state["total_decisions"] * 10),
@@ -261,9 +287,29 @@ async def present_options_node(state: TechSpecState) -> TechSpecState:
         })
 
         # Add conversation message
+        if fallback_used and not next_research.get("_fallback_logged"):
+            state["conversation_history"].append({
+                "role": "agent",
+                "message": (
+                    f"⚠️ Automated research for {next_research['category']} "
+                    "was unavailable (rate limit or API error). Showing fallback "
+                    "options derived from the initial requirements so you can "
+                    "continue making decisions."
+                ),
+                "timestamp": datetime.now().isoformat(),
+                "metadata": {
+                    "node": "present_options",
+                    "category": next_research["category"],
+                    "fallback": True
+                }
+            })
+            next_research["_fallback_logged"] = True
+
+        # Store only lightweight summary in conversation_history to save memory
+        # Full details are already in state["research_results"] and state["technology_options"]
         state["conversation_history"].append({
             "role": "agent",
-            "message": message,
+            "message": f"🔍 Presenting technology options for {next_research['category']} ({len(next_research['options'])} options available)",
             "timestamp": datetime.now().isoformat(),
             "metadata": {
                 "node": "present_options",
@@ -276,7 +322,8 @@ async def present_options_node(state: TechSpecState) -> TechSpecState:
             "Options presented to user",
             session_id=state["session_id"],
             category=next_research["category"],
-            options_count=len(next_research["options"])
+            options_count=len(next_research["options"]),
+            fallback_used=fallback_used
         )
 
         return state
@@ -312,11 +359,26 @@ async def wait_user_decision_node(state: TechSpecState) -> TechSpecState:
     Returns:
         State (unchanged - waiting for external input)
     """
+    category = state.get("current_research_category")
+    options = state.get("technology_options", {}).get(category, []) if category else []
+
     logger.info(
         "Waiting for user decision",
         session_id=state["session_id"],
-        category=state["current_research_category"]
+        category=category,
+        options_count=len(options)
     )
+
+    if not options:
+        logger.error(
+            "No technology options available while waiting for user decision",
+            session_id=state["session_id"],
+            category=category
+        )
+        raise RuntimeError(
+            f"No technology options available for {category}. "
+            "Workflow cannot continue."
+        )
 
     # If a decision callback was registered (CLI execution), wait for it
     if _user_decision_callback:
@@ -513,6 +575,65 @@ def _generate_research_cache_key(category: str, context: Dict) -> str:
     return f"tech_research:{category}:{context_hash}"
 
 
+def _find_gap_by_category(gaps: List[Dict], category: str) -> Optional[Dict]:
+    """Locate identified gap dictionary by category."""
+    for gap in gaps:
+        if gap.get("category") == category:
+            return gap
+    return None
+
+
+def _build_fallback_options(
+    category: str,
+    gap: Optional[Dict],
+    error_message: Optional[str]
+) -> List[Dict]:
+    """
+    Build fallback technology options when automated research fails.
+
+    Uses suggested options from the PRD/identified gaps so the user can continue
+    making selections without needing fresh LLM output.
+    """
+    suggestions = (gap or {}).get("suggested_options", []) or [f"Custom {category} option"]
+    description = (gap or {}).get(
+        "description",
+        f"Manually evaluate candidate technologies for {category}."
+    )
+    fallback_options: List[Dict] = []
+
+    for idx, name in enumerate(suggestions[:3]):
+        fallback_options.append({
+            "technology_name": name,
+            "description": description,
+            "pros": [
+                "Originated from initial project requirements or team preferences",
+                "Can be evaluated manually despite automated research limits"
+            ],
+            "cons": [
+                "Detailed research unavailable in current run"
+                + (f" ({error_message})" if error_message else ""),
+                "Requires manual validation for scalability, cost, and integration"
+            ],
+            "use_cases": [
+                f"{category} needs for the current project scope"
+            ],
+            "popularity_score": max(30.0, 60.0 - (idx * 5)),
+            "learning_curve": "medium",
+            "documentation_quality": "unknown",
+            "community_support": "unknown",
+            "integration_complexity": "medium",
+            "sources": [],
+            "recommended": idx == 0,
+            "metrics": {
+                "github_stars": "N/A",
+                "npm_downloads": "N/A",
+                "last_update": "N/A"
+            }
+        })
+
+    return fallback_options
+
+
 def _format_options_message(research: Dict) -> str:
     """Format technology options into user-friendly message."""
     category = research["category"]
@@ -563,7 +684,7 @@ def _format_options_message(research: Dict) -> str:
     message += """**What would you like to choose?**
 - Reply with the number (1, 2, or 3)
 - Or type "AI recommendation" to go with the suggested option
-- Or type "search: <technology name>" to research a different technology
+- Or type "search" to manually enter a different technology
 """
 
     return message

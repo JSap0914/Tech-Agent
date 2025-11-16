@@ -4,6 +4,8 @@ Terminal UI components using Rich for beautiful CLI output.
 
 from typing import Dict, List, Optional
 from datetime import datetime
+import re
+import sys
 
 from rich.console import Console
 from rich.table import Table
@@ -16,7 +18,34 @@ import structlog
 
 logger = structlog.get_logger(__name__)
 
-console = Console()
+# Create console with legacy Windows support (ASCII only)
+console = Console(legacy_windows=True, force_terminal=True)
+
+
+def strip_emojis(text: str) -> str:
+    """Remove emojis for Windows CMD compatibility."""
+    # Remove emojis and other non-ASCII characters
+    # Comprehensive emoji ranges covering all Unicode emoji blocks
+    emoji_pattern = re.compile("["
+        u"\U0001F600-\U0001F64F"  # emoticons
+        u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+        u"\U0001F680-\U0001F6FF"  # transport & map symbols
+        u"\U0001F700-\U0001F77F"  # alchemical symbols
+        u"\U0001F780-\U0001F7FF"  # geometric shapes extended
+        u"\U0001F800-\U0001F8FF"  # supplemental arrows-C
+        u"\U0001F900-\U0001F9FF"  # supplemental symbols and pictographs
+        u"\U0001FA00-\U0001FA6F"  # chess symbols
+        u"\U0001FA70-\U0001FAFF"  # symbols and pictographs extended-A
+        u"\U00002702-\U000027B0"  # dingbats
+        u"\U000024C2-\U0001F251"  # enclosed characters
+        u"\U0001F1E0-\U0001F1FF"  # flags
+        u"\U0001F900-\U0001F9FF"  # supplemental symbols
+        u"\U00002600-\U000026FF"  # miscellaneous symbols
+        u"\U00002700-\U000027BF"  # dingbats
+        u"\U0001F018-\U0001F270"  # various symbols
+        u"\U0001F300-\U0001F5FF"  # miscellaneous symbols and pictographs
+        "]+", flags=re.UNICODE)
+    return emoji_pattern.sub('', text)
 
 
 def print_header():
@@ -40,29 +69,34 @@ def print_section(title: str, style: str = "bold yellow"):
         title: Section title
         style: Rich style string
     """
+    safe_title = strip_emojis(title) if sys.platform == "win32" else title
     console.print(f"\n{'='*70}", style=style)
-    console.print(f"  {title}", style=style)
+    console.print(f"  {safe_title}", style=style)
     console.print(f"{'='*70}\n", style=style)
 
 
 def print_success(message: str):
     """Print success message."""
-    console.print(f"[OK] {message}", style="bold green")
+    safe_message = strip_emojis(message) if sys.platform == "win32" else message
+    console.print(f"[OK] {safe_message}", style="bold green")
 
 
 def print_error(message: str):
     """Print error message."""
-    console.print(f"[ERROR] {message}", style="bold red")
+    safe_message = strip_emojis(message) if sys.platform == "win32" else message
+    console.print(f"[ERROR] {safe_message}", style="bold red")
 
 
 def print_warning(message: str):
     """Print warning message."""
-    console.print(f"[WARNING] {message}", style="bold yellow")
+    safe_message = strip_emojis(message) if sys.platform == "win32" else message
+    console.print(f"[WARNING] {safe_message}", style="bold yellow")
 
 
 def print_info(message: str):
     """Print info message."""
-    console.print(f"[INFO] {message}", style="cyan")
+    safe_message = strip_emojis(message) if sys.platform == "win32" else message
+    console.print(f"[INFO] {safe_message}", style="cyan")
 
 
 def print_agent_message(message: str, role: str = "agent"):
@@ -73,10 +107,11 @@ def print_agent_message(message: str, role: str = "agent"):
         message: Message content
         role: "agent" or "user"
     """
+    safe_message = strip_emojis(message) if sys.platform == "win32" else message
     if role == "agent":
-        console.print(f"\n[bold cyan]Agent:[/bold cyan] {message}\n")
+        console.print(f"\n[bold cyan]Agent:[/bold cyan] {safe_message}\n")
     else:
-        console.print(f"\n[bold green]User:[/bold green] {message}\n")
+        console.print(f"\n[bold green]User:[/bold green] {safe_message}\n")
 
 
 def display_completeness_score(score: float, missing: List[str], ambiguous: List[str]):
@@ -101,14 +136,16 @@ def display_completeness_score(score: float, missing: List[str], ambiguous: List
     if missing:
         console.print("[bold red]Missing Elements:[/bold red]")
         for item in missing:
-            console.print(f"  • {item}", style="red")
+            safe_item = strip_emojis(item) if sys.platform == "win32" else item
+            console.print(f"  • {safe_item}", style="red")
         console.print()
 
     # Ambiguous elements
     if ambiguous:
         console.print("[bold yellow]Ambiguous Elements:[/bold yellow]")
         for item in ambiguous:
-            console.print(f"  • {item}", style="yellow")
+            safe_item = strip_emojis(item) if sys.platform == "win32" else item
+            console.print(f"  • {safe_item}", style="yellow")
         console.print()
 
 
@@ -172,6 +209,9 @@ def display_technology_options(
         )
 
     console.print(table)
+    console.print(
+        "[dim]Enter 1/2/3, type 'ai' for the recommendation, or type 'search' to manually provide a technology name.[/dim]\n"
+    )
     console.print()
 
 
@@ -190,8 +230,12 @@ def display_conflict_warning(conflicts: List[Dict]):
         details = conflict.get("details", "")
 
         panel_style = "red" if severity == "critical" else "yellow"
+        
+        # Strip emojis on Windows
+        safe_message = strip_emojis(message) if sys.platform == "win32" else message
+        safe_details = strip_emojis(details) if sys.platform == "win32" else details
 
-        panel_content = f"[bold]{message}[/bold]\n\n{details}"
+        panel_content = f"[bold]{safe_message}[/bold]\n\n{safe_details}"
 
         console.print(Panel(
             panel_content,
@@ -217,7 +261,10 @@ def display_progress(
     """
     phase = get_phase_from_progress(progress_percentage)
 
-    progress_bar = "█" * int(progress_percentage / 2) + "░" * (50 - int(progress_percentage / 2))
+    # Use ASCII-safe characters for Windows compatibility
+    filled = int(progress_percentage / 2)
+    empty = 50 - filled
+    progress_bar = "#" * filled + "-" * empty
 
     console.print(
         f"\n[bold cyan]{phase}[/bold cyan] | "
@@ -226,7 +273,9 @@ def display_progress(
     )
 
     if message:
-        console.print(f"  {message}", style="dim")
+        # Strip emojis for Windows compatibility
+        safe_message = strip_emojis(message) if sys.platform == "win32" else message
+        console.print(f"  {safe_message}", style="dim")
 
 
 def get_phase_from_progress(progress: float) -> str:
@@ -342,16 +391,18 @@ def print_conversation_history(history: List[Dict]):
         role = msg.get("role", "unknown")
         message = msg.get("message", "")
         timestamp = msg.get("timestamp", "")
+        
+        safe_message = strip_emojis(message) if sys.platform == "win32" else message
 
         if role == "agent":
             console.print(f"[dim]{timestamp}[/dim]")
-            console.print(f"[bold cyan]Agent:[/bold cyan] {message}\n")
+            console.print(f"[bold cyan]Agent:[/bold cyan] {safe_message}\n")
         elif role == "user":
             console.print(f"[dim]{timestamp}[/dim]")
-            console.print(f"[bold green]User:[/bold green] {message}\n")
+            console.print(f"[bold green]User:[/bold green] {safe_message}\n")
         else:
             console.print(f"[dim]{timestamp}[/dim]")
-            console.print(f"[yellow]{message}[/yellow]\n")
+            console.print(f"[yellow]{safe_message}[/yellow]\n")
 
 
 def display_markdown(content: str):

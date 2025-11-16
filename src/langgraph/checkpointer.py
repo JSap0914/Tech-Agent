@@ -79,12 +79,13 @@ async def close_checkpointer(checkpointer: PostgresSaver):
 # Checkpointer usage helpers
 # =============================================================================
 
-def get_checkpoint_config(session_id: str) -> dict:
+def get_checkpoint_config(session_id: str, recursion_limit: int = 200) -> dict:
     """
     Get LangGraph config dict for checkpoint management.
 
     Args:
         session_id: Tech Spec session ID (UUID)
+        recursion_limit: Maximum LangGraph steps before raising recursion error
 
     Returns:
         Config dict with thread_id for checkpointing
@@ -94,6 +95,7 @@ def get_checkpoint_config(session_id: str) -> dict:
         >>> workflow.ainvoke(state, config=config)
     """
     return {
+        "recursion_limit": recursion_limit,
         "configurable": {
             "thread_id": session_id,
             "checkpoint_ns": "tech_spec_agent"

@@ -164,7 +164,7 @@ class TechnologyResearcher:
             response = self.tavily_client.search(
                 query=query,
                 search_depth="advanced",  # Deep search for comprehensive results
-                max_results=10,
+                max_results=5,  # Reduced from 10 to save memory
                 include_domains=[
                     "github.com",
                     "stackoverflow.com",
@@ -217,7 +217,10 @@ class TechnologyResearcher:
 
         # Generate analysis with LLM
         messages = [Message(role="user", content=prompt)]
-        response = await self.llm_client.generate_json(messages=messages)
+        response = await self.llm_client.generate_json(
+            messages=messages,
+            max_tokens=2048
+        )
 
         # Parse response into TechnologyOption objects
         options = []
@@ -249,10 +252,13 @@ class TechnologyResearcher:
         # Format search results
         results_text = ""
         if search_results:
-            for i, result in enumerate(search_results[:10], 1):
+            for i, result in enumerate(search_results[:5], 1):
                 results_text += f"\n{i}. **{result.get('title', 'Untitled')}**\n"
                 results_text += f"   URL: {result.get('url', 'N/A')}\n"
-                results_text += f"   Content: {result.get('content', 'No content')}\n"
+                content = result.get("content", "No content") or "No content"
+                if len(content) > 500:
+                    content = content[:500] + "..."
+                results_text += f"   Content: {content}\n"
         else:
             results_text = "No web search results available. Use your knowledge base."
 
