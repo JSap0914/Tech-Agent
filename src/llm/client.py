@@ -57,7 +57,7 @@ class LLMClient:
 
     def __init__(
         self,
-        model: ModelType = ModelType.CLAUDE_SONNET,
+        model: Optional[ModelType] = None,
         temperature: float = 0.7,
         max_tokens: int = 4096
     ):
@@ -65,10 +65,14 @@ class LLMClient:
         Initialize LLM client.
 
         Args:
-            model: Model type to use
+            model: Model type to use (defaults to settings.anthropic_model)
             temperature: Sampling temperature (0.0 to 1.0)
             max_tokens: Maximum tokens to generate
         """
+        # Use model from settings if not specified
+        if model is None:
+            model = ModelType(settings.anthropic_model)
+
         self.model = model
         self.temperature = temperature
         self.max_tokens = max_tokens
@@ -143,14 +147,20 @@ class LLMClient:
                 })
 
         # Call Claude API
-        response = await self.client.messages.create(
-            model=self.model.value,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            system=system if system else None,
-            messages=claude_messages,
-            stop_sequences=stop_sequences if stop_sequences else None
-        )
+        request_params = {
+            "model": self.model.value,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "messages": claude_messages,
+        }
+
+        # Anthropic API expects optional params to be omitted when unused
+        if system:
+            request_params["system"] = system
+        if stop_sequences:
+            request_params["stop_sequences"] = stop_sequences
+
+        response = await self.client.messages.create(**request_params)
 
         # Extract content
         content = ""
@@ -330,7 +340,7 @@ class LLMClient:
 # ============= Helper Functions =============
 
 async def create_llm_client(
-    model: Union[ModelType, str] = ModelType.CLAUDE_SONNET,
+    model: Optional[Union[ModelType, str]] = None,
     temperature: float = 0.7,
     max_tokens: int = 4096
 ) -> LLMClient:
@@ -338,14 +348,14 @@ async def create_llm_client(
     Factory function to create LLM client.
 
     Args:
-        model: Model type (enum or string)
+        model: Model type (enum or string, defaults to settings.anthropic_model)
         temperature: Sampling temperature
         max_tokens: Maximum tokens to generate
 
     Returns:
         Configured LLM client
     """
-    if isinstance(model, str):
+    if model is not None and isinstance(model, str):
         model = ModelType(model)
 
     return LLMClient(model=model, temperature=temperature, max_tokens=max_tokens)
@@ -353,7 +363,7 @@ async def create_llm_client(
 
 async def quick_generate(
     prompt: str,
-    model: ModelType = ModelType.CLAUDE_SONNET,
+    model: Optional[ModelType] = None,
     temperature: float = 0.7,
     max_tokens: int = 4096
 ) -> str:
@@ -362,7 +372,7 @@ async def quick_generate(
 
     Args:
         prompt: User prompt
-        model: Model to use
+        model: Model to use (defaults to settings.anthropic_model)
         temperature: Sampling temperature
         max_tokens: Maximum tokens
 

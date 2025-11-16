@@ -22,7 +22,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-### LangGraph State Machine (17 Nodes, 6 Conditional Branches)
+### LangGraph State Machine (19 Nodes, 5 Conditional Branches)
 
 **4-Phase Structure:**
 
@@ -98,11 +98,12 @@ class TechSpecState(TypedDict):
     inferred_api_spec: Optional[Dict]
 
     # Generated Documents
-    final_trd: Optional[str]
-    api_specification: Optional[str]
-    database_schema: Optional[str]
-    architecture_diagram: Optional[str]
-    tech_stack_document: Optional[str]
+    trd_draft: str
+    trd_validation_result: Dict  # {score, gaps, recommendations}
+    api_specification: str
+    database_schema: str
+    architecture_diagram: str
+    tech_stack_document: str
 
     # Meta
     current_stage: str

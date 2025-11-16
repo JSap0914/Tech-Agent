@@ -11,13 +11,13 @@ The checkpointer enables:
 import os
 from typing import Optional
 from langgraph.checkpoint.postgres import PostgresSaver
-import asyncpg
+from psycopg_pool import ConnectionPool
 import structlog
 
 logger = structlog.get_logger()
 
 
-async def create_checkpointer(database_url: Optional[str] = None) -> PostgresSaver:
+def create_checkpointer(database_url: Optional[str] = None) -> PostgresSaver:
     """
     Create PostgreSQL checkpointer for LangGraph workflow.
 
@@ -32,7 +32,7 @@ async def create_checkpointer(database_url: Optional[str] = None) -> PostgresSav
         PostgresSaver instance configured for Tech Spec Agent
 
     Example:
-        >>> checkpointer = await create_checkpointer()
+        >>> checkpointer = create_checkpointer()
         >>> workflow = create_tech_spec_workflow(checkpointer=checkpointer)
         >>> result = await workflow.ainvoke(initial_state, config={
         ...     "configurable": {"thread_id": session_id}
@@ -49,14 +49,14 @@ async def create_checkpointer(database_url: Optional[str] = None) -> PostgresSav
 
     logger.info("creating_checkpointer", database_url=database_url[:30] + "...")
 
-    # Create PostgreSQL connection pool
-    pool = await asyncpg.create_pool(database_url)
+    # Create PostgreSQL connection pool using psycopg
+    connection_pool = ConnectionPool(database_url, min_size=1, max_size=10, kwargs={"autocommit": True})
 
     # Create checkpointer with connection pool
-    checkpointer = PostgresSaver(pool)
+    checkpointer = PostgresSaver(connection_pool)
 
     # Initialize checkpoints table if not exists
-    await checkpointer.setup()
+    checkpointer.setup()
 
     logger.info("checkpointer_created", status="ready")
 

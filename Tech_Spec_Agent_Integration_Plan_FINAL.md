@@ -82,7 +82,7 @@ All claims from the final analysis were independently verified against source do
 ┌────────────────────────────────────────────────────────────┐
 │              Tech Spec Agent (FastAPI)                      │
 │  ┌──────────────────────────────────────────────────┐     │
-│  │         LangGraph Workflow (17 Nodes)            │     │
+│  │         LangGraph Workflow (19 Nodes)            │     │
 │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐       │     │
 │  │  │Research  │→ │Present   │→ │Wait User │       │     │
 │  │  │Technologies│ │Options   │  │Decision  │       │     │
@@ -1936,13 +1936,13 @@ from src.database.connection import db_manager
 
 def create_tech_spec_workflow() -> StateGraph:
     """
-    Create LangGraph workflow with 17 nodes.
+    Create LangGraph workflow with 19 nodes.
     Architecture based on Tech_Spec_Agent_LangGraph_Detailed.md:200-350
     """
     # Initialize workflow
     workflow = StateGraph(TechSpecState)
 
-    # Add all 17 nodes
+    # Add all 19 nodes
     workflow.add_node("load_inputs", nodes.load_inputs)
     workflow.add_node("analyze_completeness", nodes.analyze_completeness)
     workflow.add_node("identify_tech_gaps", nodes.identify_tech_gaps)
@@ -2206,7 +2206,7 @@ async def load_inputs(state: TechSpecState) -> TechSpecState:
 
 **Deliverables**:
 - TechSpecState schema fully defined
-- LangGraph workflow with 17 nodes connected
+- LangGraph workflow with 19 nodes connected
 - PostgreSQL checkpointer configured
 - Progress calculation system working
 - All node stubs created (implementation in later phases)

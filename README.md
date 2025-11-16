@@ -53,7 +53,7 @@ The Tech Spec Agent is an AI-powered system that automatically generates Technic
 ┌────────────────────────────────────────────────────────────┐
 │              Tech Spec Agent (FastAPI)                      │
 │  ┌──────────────────────────────────────────────────┐     │
-│  │         LangGraph Workflow (17 Nodes)            │     │
+│  │         LangGraph Workflow (19 Nodes)            │     │
 │  └──────────────────────────────────────────────────┘     │
 └────────┬──────────────────────────┬───────────────────────┘
          │                          │

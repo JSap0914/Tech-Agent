@@ -39,7 +39,7 @@ async def generate_trd_node(state: TechSpecState) -> TechSpecState:
     )
 
     try:
-        llm = LLMClient(model=ModelType.CLAUDE_SONNET, temperature=0.5)
+        llm = LLMClient(temperature=0.5)
 
         # Build TRD generation prompt
         prompt = _build_trd_prompt(state)
@@ -191,7 +191,7 @@ The TRD is missing critical sections or has insufficient content. Regenerating..
             return state
 
         # Step 2: LLM-based semantic validation (only if structure passes)
-        llm = LLMClient(model=ModelType.CLAUDE_SONNET, temperature=0.2)
+        llm = LLMClient(temperature=0.2)
 
         # Build validation prompt with structure validation context
         structure_issues_text = "\n".join([
@@ -401,7 +401,7 @@ async def generate_api_spec_node(state: TechSpecState) -> TechSpecState:
     logger.info("Generating API specification", session_id=state["session_id"])
 
     try:
-        llm = LLMClient(model=ModelType.CLAUDE_SONNET, temperature=0.3)
+        llm = LLMClient(temperature=0.3)
 
         prompt = f"""Generate an OpenAPI 3.0 specification based on the TRD and inferred APIs.
 
@@ -450,7 +450,7 @@ async def generate_db_schema_node(state: TechSpecState) -> TechSpecState:
     logger.info("Generating database schema", session_id=state["session_id"])
 
     try:
-        llm = LLMClient(model=ModelType.CLAUDE_SONNET, temperature=0.3)
+        llm = LLMClient(temperature=0.3)
 
         # Determine database type from decisions
         db_tech = "PostgreSQL"  # Default
@@ -504,7 +504,7 @@ async def generate_architecture_node(state: TechSpecState) -> TechSpecState:
     logger.info("Generating architecture diagram", session_id=state["session_id"])
 
     try:
-        llm = LLMClient(model=ModelType.CLAUDE_SONNET, temperature=0.3)
+        llm = LLMClient(temperature=0.3)
 
         prompt = f"""Generate a system architecture diagram in Mermaid format.
 
@@ -600,7 +600,7 @@ async def _multi_agent_trd_review(trd_content: str, prd_content: str, tech_decis
     Returns:
         Dict with aggregated review results from all agents
     """
-    llm = LLMClient(model=ModelType.CLAUDE_SONNET, temperature=0.3)
+    llm = LLMClient(temperature=0.3)
 
     # Define specialized review agents
     agents = {

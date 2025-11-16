@@ -45,8 +45,8 @@ async def analyze_completeness_node(state: TechSpecState) -> TechSpecState:
     )
 
     try:
-        # Create LLM client
-        llm = LLMClient(model=ModelType.CLAUDE_SONNET, temperature=0.3)
+        # Create LLM client (uses settings.anthropic_model from .env)
+        llm = LLMClient(temperature=0.3)
 
         # Prepare analysis prompt
         analysis_prompt = f"""Analyze the following PRD and design documents to evaluate completeness for technical specification.
@@ -218,7 +218,7 @@ async def identify_tech_gaps_node(state: TechSpecState) -> TechSpecState:
     )
 
     try:
-        llm = LLMClient(model=ModelType.CLAUDE_SONNET, temperature=0.3)
+        llm = LLMClient(temperature=0.3)
 
         # Prepare gap identification prompt
         gap_prompt = f"""Analyze the following project requirements and identify technology choices that need to be made.
@@ -282,11 +282,16 @@ Respond with JSON:
 
         # Update state
         gaps = result.get("technology_gaps", [])
+        pending_categories = [
+            gap.get("category")
+            for gap in gaps
+            if gap.get("category")
+        ]
         state.update({
             "identified_gaps": gaps,
             "gap_count": len(gaps),
             "total_decisions": len(gaps),
-            "pending_decisions": len(gaps),
+            "pending_decisions": pending_categories,
             "completed_decisions": 0,
             "current_stage": "identify_tech_gaps",
             "progress_percentage": 25.0,
@@ -442,7 +447,7 @@ async def ask_user_clarification_node(state: TechSpecState) -> TechSpecState:
     )
 
     try:
-        llm = LLMClient(model=ModelType.CLAUDE_SONNET, temperature=0.3)
+        llm = LLMClient(temperature=0.3)
 
         # Generate specific clarification questions based on missing elements
         # Extract missing/ambiguous elements from completeness analysis

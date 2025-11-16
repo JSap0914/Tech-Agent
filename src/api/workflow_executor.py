@@ -16,6 +16,7 @@ from src.langgraph.state import create_initial_state, TechSpecState
 from src.langgraph.checkpointer import create_checkpointer, get_checkpoint_config
 from src.database.connection import get_db_connection
 from src.websocket.connection_manager import manager as websocket_manager
+from src.config import settings
 
 logger = structlog.get_logger(__name__)
 
@@ -34,7 +35,7 @@ async def initialize_workflow():
 
     if _workflow is None:
         logger.info("Initializing LangGraph workflow with checkpointer")
-        _checkpointer = await create_checkpointer()
+        _checkpointer = create_checkpointer(database_url=settings.database_url_sync)
         _workflow = create_tech_spec_workflow(checkpointer=_checkpointer)
         logger.info("LangGraph workflow initialized successfully")
 
@@ -175,12 +176,17 @@ async def execute_workflow(
                         session_data=_extract_session_data(node_output)
                     )
 
+                    # Extract options from technology_options dict
+                    current_category = node_output.get("current_research_category")
+                    technology_options = node_output.get("technology_options", {})
+                    options = technology_options.get(current_category, []) if current_category else []
+
                     await websocket_manager.broadcast(
                         {
                             "type": "waiting_user_decision",
                             "session_id": session_id,
-                            "category": node_output.get("current_research_category"),
-                            "options": node_output.get("current_research_options", []),
+                            "category": current_category,
+                            "options": options,
                             "message": "Waiting for user technology selection",
                             "timestamp": datetime.now().isoformat()
                         },

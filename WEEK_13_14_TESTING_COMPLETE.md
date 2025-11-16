@@ -198,7 +198,7 @@ Week 13-14 delivered a comprehensive testing suite for the Tech Spec Agent, ensu
 
 #### 4. Full Workflow (`test_full_workflow.py`)
 **Lines**: 847
-**Coverage**: End-to-end LangGraph workflow with all 17 nodes
+**Coverage**: End-to-end LangGraph workflow with all 19 nodes
 
 **Test Classes**:
 - `TestWorkflowInitialization` (3 tests)
@@ -275,8 +275,8 @@ Week 13-14 delivered a comprehensive testing suite for the Tech Spec Agent, ensu
   - Conversation history preservation
 
 **Key Validations**:
-- ✅ All 17 nodes execute correctly
-- ✅ All 6 conditional branches work as expected
+- ✅ All 19 nodes execute correctly
+- ✅ All 5 conditional branches work as expected
 - ✅ State transitions are correct
 - ✅ Progress percentage updates accurately
 - ✅ Errors are handled gracefully

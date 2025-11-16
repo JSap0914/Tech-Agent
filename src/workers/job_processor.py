@@ -14,7 +14,7 @@ import structlog
 
 from src.langgraph.workflow import create_tech_spec_workflow
 from src.langgraph.state import TechSpecState
-from src.langgraph.checkpointer import get_checkpointer
+from src.langgraph.checkpointer import create_checkpointer
 from src.websocket.connection_manager import manager
 from src.workers.decision_parser import UserDecision
 
@@ -75,7 +75,7 @@ class JobProcessor:
 
         try:
             # Step 1: Get workflow checkpointer
-            checkpointer = get_checkpointer()
+            checkpointer = create_checkpointer()
 
             # Step 2: Load current workflow state
             config = {"configurable": {"thread_id": session_id}}
@@ -94,24 +94,36 @@ class JobProcessor:
                 return
 
             # Step 3: Update state with user decision
-            # Add selected technology to selected_technologies dict
+            # Add decision to user_decisions list (the field workflow actually checks!)
             state_values = current_state.values
-            selected_technologies = state_values.get("selected_technologies", {})
-            selected_technologies[decision.category] = {
-                "name": decision.selected_technology,
+
+            from datetime import datetime
+
+            # Append to user_decisions list
+            if "user_decisions" not in state_values:
+                state_values["user_decisions"] = []
+
+            state_values["user_decisions"].append({
+                "category": decision.category,
+                "technology_name": decision.selected_technology,
                 "reasoning": decision.reasoning,
                 "confidence": decision.confidence,
-                "selected_at": "now"  # In real impl, use datetime.now().isoformat()
-            }
+                "timestamp": datetime.now().isoformat()
+            })
 
             # Remove category from pending_decisions
             pending_decisions = state_values.get("pending_decisions", [])
             if decision.category in pending_decisions:
                 pending_decisions.remove(decision.category)
 
+            # Unpause workflow to allow continuation
+            state_values["paused"] = False
+
+            # Update progress counters
+            state_values["completed_decisions"] = len(state_values["user_decisions"])
+
             # Step 4: Create updated state
             updated_state = TechSpecState(**state_values)
-            updated_state["selected_technologies"] = selected_technologies
             updated_state["pending_decisions"] = pending_decisions
 
             # Step 5: Resume workflow execution

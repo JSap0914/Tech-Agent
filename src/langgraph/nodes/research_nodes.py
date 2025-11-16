@@ -3,7 +3,8 @@ Technology research nodes for Tech Spec Agent workflow.
 Handles researching, presenting, and collecting user decisions on technology choices.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional, Awaitable, Callable
+import asyncio
 import structlog
 from datetime import datetime
 import json
@@ -39,62 +40,111 @@ async def research_technologies_node(state: TechSpecState) -> TechSpecState:
     try:
         researcher = TechnologyResearcher()
 
-        # Research each gap
-        research_results = []
-        for gap in state["identified_gaps"]:
-            # Prepare context for research
-            context = {
-                "project_type": _infer_project_type(state),
-                "tech_stack": _extract_tech_stack(state),
-                "requirements": state["prd_content"][:1000]  # Snippet for context
-            }
+        # Prepare context for research (shared across all gaps)
+        context = {
+            "project_type": _infer_project_type(state),
+            "tech_stack": _extract_tech_stack(state),
+            "requirements": state["prd_content"][:1000]  # Snippet for context
+        }
 
-            # Week 12: Check cache first to avoid redundant API calls
-            cache_key = _generate_research_cache_key(gap["category"], context)
-            cached_result = await redis_client.get(cache_key)
+        # Helper function to research a single gap with cache check
+        async def _research_single_gap(gap: Dict) -> Dict:
+            """Research a single technology gap with caching."""
+            try:
+                # Week 12: Check cache first to avoid redundant API calls
+                cache_key = _generate_research_cache_key(gap["category"], context)
+                cached_result = await redis_client.get(cache_key)
 
-            if cached_result:
-                logger.info(
-                    "Using cached research results",
+                if cached_result:
+                    logger.info(
+                        "Using cached research results",
+                        category=gap["category"],
+                        cache_key=cache_key
+                    )
+                    return cached_result
+
+                # Research this technology category (cache miss)
+                result = await researcher.research_category(
                     category=gap["category"],
-                    cache_key=cache_key
+                    question=gap["description"],
+                    context=context,
+                    max_options=settings.tech_spec_max_options_per_gap
                 )
-                research_results.append(cached_result)
-                continue
 
-            # Research this technology category (cache miss)
-            result = await researcher.research_category(
-                category=gap["category"],
-                question=gap["description"],
-                context=context,
-                max_options=settings.tech_spec_max_options_per_gap
-            )
+                research_data = {
+                    "gap_id": gap.get("id", gap["category"]),
+                    "category": gap["category"],
+                    "description": gap["description"],
+                    "priority": gap.get("priority", "medium"),
+                    "options": [opt.dict() for opt in result.options],
+                    "summary": result.research_summary,
+                    "recommendation": result.recommendation
+                }
 
-            research_data = {
-                "gap_id": gap.get("id", gap["category"]),
-                "category": gap["category"],
-                "description": gap["description"],
-                "priority": gap.get("priority", "medium"),
-                "options": [opt.dict() for opt in result.options],
-                "summary": result.research_summary,
-                "recommendation": result.recommendation
-            }
+                # Week 12: Cache the research results (24 hour TTL)
+                await redis_client.set(
+                    cache_key,
+                    research_data,
+                    ttl=settings.tech_spec_cache_ttl
+                )
 
-            research_results.append(research_data)
+                logger.info(
+                    "Research completed for category",
+                    category=gap["category"],
+                    options_found=len(result.options),
+                    cached=True
+                )
 
-            # Week 12: Cache the research results (24 hour TTL)
-            await redis_client.set(
-                cache_key,
-                research_data,
-                ttl=settings.tech_spec_cache_ttl
-            )
+                return research_data
 
-            logger.info(
-                "Research completed for category",
-                category=gap["category"],
-                options_found=len(result.options),
-                cached=True
-            )
+            except Exception as e:
+                logger.error(
+                    "Failed to research gap",
+                    category=gap.get("category", "unknown"),
+                    error=str(e)
+                )
+                # Return error placeholder instead of failing entire workflow
+                return {
+                    "gap_id": gap.get("id", gap["category"]),
+                    "category": gap["category"],
+                    "description": gap["description"],
+                    "priority": gap.get("priority", "medium"),
+                    "options": [],
+                    "summary": f"Research failed: {str(e)}",
+                    "recommendation": "Manual selection required",
+                    "error": str(e)
+                }
+
+        # PARALLEL PROCESSING: Research all gaps concurrently
+        logger.info("Starting parallel research", gap_count=len(state["identified_gaps"]))
+        research_tasks = [_research_single_gap(gap) for gap in state["identified_gaps"]]
+        research_results = await asyncio.gather(*research_tasks, return_exceptions=True)
+
+        # Filter out any exception results and log them
+        valid_results = []
+        for i, result in enumerate(research_results):
+            if isinstance(result, Exception):
+                logger.error(
+                    "Research task failed with exception",
+                    gap_index=i,
+                    error=str(result)
+                )
+                # Add fallback error result
+                gap = state["identified_gaps"][i]
+                valid_results.append({
+                    "gap_id": gap.get("id", gap["category"]),
+                    "category": gap["category"],
+                    "description": gap["description"],
+                    "priority": gap.get("priority", "medium"),
+                    "options": [],
+                    "summary": f"Research failed: {str(result)}",
+                    "recommendation": "Manual selection required",
+                    "error": str(result)
+                })
+            else:
+                valid_results.append(result)
+
+        research_results = valid_results
 
         # Update state
         state["research_results"].extend(research_results)
@@ -268,8 +318,17 @@ async def wait_user_decision_node(state: TechSpecState) -> TechSpecState:
         category=state["current_research_category"]
     )
 
-    # This node just marks the state as paused
-    # The actual decision will be added via the API endpoint
+    # If a decision callback was registered (CLI execution), wait for it
+    if _user_decision_callback:
+        await _user_decision_callback(state)
+        state.update({
+            "paused": False,
+            "current_stage": "wait_user_decision",
+            "updated_at": datetime.now().isoformat()
+        })
+        return state
+
+    # Default behaviour (API/async workflow): mark as paused and return
     state.update({
         "paused": True,
         "current_stage": "wait_user_decision",
@@ -358,9 +417,20 @@ async def validate_decision_node(state: TechSpecState) -> TechSpecState:
             )
 
         # Update counters
+        decided_categories = {
+            decision.get("category")
+            for decision in state["user_decisions"]
+            if decision.get("category")
+        }
+        pending_categories = [
+            gap.get("category")
+            for gap in state.get("identified_gaps", [])
+            if gap.get("category") and gap.get("category") not in decided_categories
+        ]
+
         state.update({
             "completed_decisions": len(state["user_decisions"]),
-            "pending_decisions": state["total_decisions"] - len(state["user_decisions"]),
+            "pending_decisions": pending_categories,
             "paused": False,  # Continue workflow
             "current_stage": "validate_decision",
             "updated_at": datetime.now().isoformat()
@@ -566,3 +636,14 @@ Your selection of **{decision['technology_name']}** for {decision['category']} m
 """
 
     return message
+UserDecisionCallback = Optional[Callable[[TechSpecState], Awaitable[None]]]
+_user_decision_callback: UserDecisionCallback = None
+
+
+def register_user_decision_callback(callback: UserDecisionCallback) -> None:
+    """
+    Allow external runners (e.g., CLI) to inject an async handler that collects
+    user decisions before the workflow continues past wait_user_decision.
+    """
+    global _user_decision_callback
+    _user_decision_callback = callback

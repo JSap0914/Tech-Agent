@@ -23,7 +23,7 @@ The **Tech Spec Agent** is an AI-powered system that automatically generates Tec
    - Technology Stack Documentation
 
 ## Key Features
-- **LangGraph Workflow**: 17-node state machine with 4 phases, 6 conditional branches
+- **LangGraph Workflow**: 19-node state machine with 4 phases, 5 conditional branches
 - **Quality Validation**: 90% quality threshold with iterative refinement (max 3 retries)
 - **Real-time Communication**: WebSocket for progress updates and user interactions
 - **Week 8 Enhancements**: Few-shot examples, structured validation, multi-agent TRD review

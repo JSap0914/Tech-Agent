@@ -25,7 +25,7 @@ target_metadata = Base.metadata
 
 # Override sqlalchemy.url from environment variable
 from src.config import settings
-config.set_main_option("sqlalchemy.url", settings.database_url_sync)
+config.set_main_option("sqlalchemy.url", settings.database_url)
 
 
 def run_migrations_offline() -> None:

@@ -38,7 +38,7 @@ def upgrade() -> None:
         sa.Column('completed_at', sa.DateTime(), nullable=True),
         sa.CheckConstraint("status IN ('pending', 'in_progress', 'paused', 'completed', 'failed')", name='valid_status'),
         sa.CheckConstraint('progress_percentage >= 0 AND progress_percentage <= 100', name='valid_progress'),
-        sa.ForeignKeyConstraint(['design_job_id'], ['shared.design_jobs.id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(['design_job_id'], ['shared.design_jobs.job_id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id')
     )
 

@@ -28,6 +28,10 @@ class Settings(BaseSettings):
 
     # ============= LLM APIs =============
     anthropic_api_key: str = Field(..., description="Anthropic API key for Claude")
+    anthropic_model: str = Field(
+        default="claude-3-5-haiku-20241022",
+        description="Anthropic model to use (claude-3-5-haiku-20241022, claude-sonnet-4-20250514, claude-opus-4-20250514)"
+    )
     openai_api_key: str = Field(..., description="OpenAI API key for Google AI Studio")
     openai_org_id: str = Field(default="", description="OpenAI organization ID")
 

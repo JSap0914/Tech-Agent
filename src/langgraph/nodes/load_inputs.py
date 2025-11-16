@@ -25,6 +25,8 @@ async def load_inputs_node(state: TechSpecState) -> TechSpecState:
     Validates that Design Agent has completed successfully
     and loads all required documents.
 
+    If inputs are already provided (e.g., CLI mode), skips database operations.
+
     Args:
         state: Current workflow state with session metadata
 
@@ -35,7 +37,45 @@ async def load_inputs_node(state: TechSpecState) -> TechSpecState:
         ValueError: If Design Agent job is not completed or documents are missing
     """
     logger.info(
-        "Loading inputs from Design Agent",
+        "Loading inputs",
+        session_id=state["session_id"],
+        design_job_id=state.get("design_job_id")
+    )
+
+    # Check if inputs are already provided (CLI mode)
+    if state.get("prd_content") and state.get("design_docs"):
+        logger.info(
+            "Inputs already provided (CLI mode), skipping database load",
+            session_id=state["session_id"],
+            prd_length=len(state["prd_content"]),
+            design_docs_count=len([v for v in state["design_docs"].values() if v])
+        )
+
+        # Update state with progress
+        state.update({
+            "current_stage": "load_inputs",
+            "progress_percentage": 5.0,
+            "updated_at": datetime.now().isoformat()
+        })
+
+        # Add conversation message
+        doc_count = len([v for v in state["design_docs"].values() if v])
+        state["conversation_history"].append({
+            "role": "agent",
+            "message": f"✅ Successfully loaded PRD and {doc_count} design documents. Starting analysis...",
+            "timestamp": datetime.now().isoformat(),
+            "metadata": {
+                "node": "load_inputs",
+                "action": "inputs_already_loaded",
+                "mode": "cli"
+            }
+        })
+
+        return state
+
+    # Otherwise, load from database (web API mode)
+    logger.info(
+        "Loading inputs from Design Agent database",
         session_id=state["session_id"],
         design_job_id=state["design_job_id"]
     )

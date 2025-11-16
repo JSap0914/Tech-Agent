@@ -1,6 +1,6 @@
 """
 LangGraph state schema for Tech Spec Agent workflow.
-Defines the complete state structure for all 17 nodes.
+Defines the complete state structure for all 19 nodes.
 """
 
 from typing import TypedDict, List, Dict, Optional, Annotated
@@ -69,7 +69,7 @@ class TechSpecState(TypedDict):
 
     # ============= Progress Tracking =============
     progress_percentage: float  # 0-100
-    pending_decisions: int
+    pending_decisions: List[str]
     completed_decisions: int
     total_decisions: int
 
@@ -152,7 +152,7 @@ def create_initial_state(
         completed=False,
         # Progress tracking
         progress_percentage=0.0,
-        pending_decisions=0,
+        pending_decisions=[],
         completed_decisions=0,
         total_decisions=0,
         # Error handling

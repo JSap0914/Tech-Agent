@@ -195,7 +195,7 @@
 
 1. **API Routes**: Only `/` and `/health` implemented. Full API in Phase 1.5.
 2. **Database Tables**: Schema defined but not created (Alembic migrations in Phase 1).
-3. **LangGraph Workflow**: State schema complete, but 17 nodes are placeholders.
+3. **LangGraph Workflow**: State schema complete, but 19 nodes are placeholders.
 4. **WebSocket**: ConnectionManager class exists but broadcast logic is TODO.
 5. **Design Agent Integration**: Loader functions are placeholders.
 

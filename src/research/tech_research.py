@@ -53,7 +53,7 @@ class TechnologyResearcher:
     def __init__(
         self,
         tavily_api_key: Optional[str] = None,
-        llm_model: ModelType = ModelType.CLAUDE_SONNET
+        llm_model: Optional[ModelType] = None
     ):
         """
         Initialize technology researcher.
@@ -66,7 +66,7 @@ class TechnologyResearcher:
             api_key=tavily_api_key or settings.tavily_api_key
         )
         self.llm_client = LLMClient(model=llm_model, temperature=0.3)
-        logger.info("Technology researcher initialized", llm_model=llm_model.value)
+        logger.info("Technology researcher initialized", llm_model=self.llm_client.model.value)
 
     async def research_category(
         self,

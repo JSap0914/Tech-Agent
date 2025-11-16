@@ -49,7 +49,7 @@ src/
 │   ├── checkpointer.py   # LangGraph checkpoint storage
 │   ├── error_logging.py  # Error persistence to agent_error_logs
 │   ├── state.py          # TechSpecState schema definition
-│   ├── workflow.py       # LangGraph workflow definition (17 nodes)
+│   ├── workflow.py       # LangGraph workflow definition (19 nodes)
 │   └── __init__.py
 ├── llm/
 │   └── client.py         # LLM client wrapper (Anthropic Claude)
@@ -130,7 +130,7 @@ tests/
 ## Important Files by Functionality
 
 ### LangGraph Workflow
-- **Entry Point**: `src/langgraph/workflow.py` - 17-node workflow definition
+- **Entry Point**: `src/langgraph/workflow.py` - 19-node workflow definition
 - **State**: `src/langgraph/state.py` - TechSpecState TypedDict
 - **Nodes**: `src/langgraph/nodes/*.py` - Individual node implementations
 
