@@ -32,10 +32,16 @@ class DesignJob(Base):
     __tablename__ = "design_jobs"
     __table_args__ = {"schema": "shared"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(UUID(as_uuid=True), nullable=False)
+    job_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(String(255), nullable=False)  # Design Agent uses VARCHAR
+    user_id = Column(String(255), nullable=True)
+    prd_content = Column(Text)
+    trd_content = Column(Text)
     status = Column(String(20), default="pending")
+    error_message = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
+    started_at = Column(DateTime)
+    completed_at = Column(DateTime)
 
 
 class DesignOutput(Base):
@@ -43,11 +49,13 @@ class DesignOutput(Base):
     __tablename__ = "design_outputs"
     __table_args__ = {"schema": "shared"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    design_job_id = Column(UUID(as_uuid=True), ForeignKey("shared.design_jobs.id"))
-    doc_type = Column(String(50))
+    output_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    job_id = Column(UUID(as_uuid=True), ForeignKey("shared.design_jobs.job_id"))
+    document_type = Column(String(50))
+    file_name = Column(String(255))
     content = Column(Text)
-    file_path = Column(Text)
+    version = Column(String(20))
+    output_metadata = Column("metadata", JSONB)  # Map to 'metadata' column in DB
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -56,8 +64,8 @@ class DesignDecision(Base):
     __tablename__ = "design_decisions"
     __table_args__ = {"schema": "shared"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    design_job_id = Column(UUID(as_uuid=True), ForeignKey("shared.design_jobs.id"))
+    decision_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    job_id = Column(UUID(as_uuid=True), ForeignKey("shared.design_jobs.job_id"))
     decision_type = Column(String(50))
     decision_value = Column(Text)
     reasoning = Column(Text)
@@ -69,8 +77,8 @@ class DesignProgress(Base):
     __tablename__ = "design_progress"
     __table_args__ = {"schema": "shared"}
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    design_job_id = Column(UUID(as_uuid=True), ForeignKey("shared.design_jobs.id"))
+    progress_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    job_id = Column(UUID(as_uuid=True), ForeignKey("shared.design_jobs.job_id"))
     stage = Column(String(50))
     progress = Column(Float)
     updated_at = Column(DateTime, default=datetime.utcnow)
@@ -89,7 +97,7 @@ class TechSpecSession(Base):
     project_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     design_job_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("shared.design_jobs.id", ondelete="CASCADE"),
+        ForeignKey("shared.design_jobs.job_id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )

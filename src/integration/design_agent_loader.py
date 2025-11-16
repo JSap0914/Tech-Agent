@@ -37,7 +37,7 @@ async def load_design_agent_outputs(design_job_id: str) -> Dict[str, str]:
 
     async with db_manager.get_async_session() as session:
         # Query all outputs for this design job
-        query = select(DesignOutput).where(DesignOutput.design_job_id == design_job_id)
+        query = select(DesignOutput).where(DesignOutput.job_id == design_job_id)
         result = await session.execute(query)
         outputs = result.scalars().all()
 
@@ -47,10 +47,10 @@ async def load_design_agent_outputs(design_job_id: str) -> Dict[str, str]:
         # Build output dictionary
         output_dict = {}
         for output in outputs:
-            if output.doc_type == "ai_studio_code":
-                output_dict["ai_studio_code_path"] = output.file_path or ""
+            if output.document_type == "ai_studio_code":
+                output_dict["ai_studio_code_path"] = output.file_name or ""
             else:
-                output_dict[output.doc_type] = output.content or ""
+                output_dict[output.document_type] = output.content or ""
 
         # Validate required documents exist
         required_docs = ["prd", "design_system", "ux_flow", "screen_specs"]
@@ -85,7 +85,7 @@ async def validate_design_job_completed(design_job_id: str) -> bool:
 
     async with db_manager.get_async_session() as session:
         # Query design job status
-        query = select(DesignJob).where(DesignJob.id == design_job_id)
+        query = select(DesignJob).where(DesignJob.job_id == design_job_id)
         result = await session.execute(query)
         design_job = result.scalar_one_or_none()
 
@@ -116,7 +116,7 @@ async def load_design_decisions(design_job_id: str) -> List[Dict]:
     async with db_manager.get_async_session() as session:
         # Query all decisions for this design job
         query = select(DesignDecision).where(
-            DesignDecision.design_job_id == design_job_id
+            DesignDecision.job_id == design_job_id
         )
         result = await session.execute(query)
         decisions = result.scalars().all()

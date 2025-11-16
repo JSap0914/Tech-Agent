@@ -68,7 +68,20 @@
       "mcp__serena__think_about_collected_information",
       "Bash(timeout 90 bash:*)",
       "Bash(printf:*)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(redis-cli ping:*)",
+      "Bash(netstat:*)",
+      "Bash(tasklist:*)",
+      "Bash(test:*)",
+      "Bash(python -m json.tool:*)",
+      "Bash(taskkill /F /PID 26560)",
+      "Bash(\"./venv/Scripts/python.exe\":*)",
+      "Bash(taskkill:*)",
+      "Bash(nul)",
+      "Bash(start \"Tech Spec Agent Server\" \"./venv/Scripts/python.exe\" -m uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload)",
+      "Bash(\"./venv/Scripts/python.exe\" -m uvicorn src.main:app --host 0.0.0.0 --port 8001)",
+      "Bash(\"./venv/Scripts/python.exe\" -m uvicorn src.main:app --host 0.0.0.0 --port 8002)",
+      "Bash(\"./venv/Scripts/python.exe\" -c \"\nimport asyncio\nimport asyncpg\n\nasync def check_session():\n    conn = await asyncpg.connect(\n        database=''anyon_db'',\n        user=''anyon_user'',\n        password=''anyon_password_2025'',\n        host=''localhost'',\n        port=5432\n    )\n    \n    # Check Tech Spec session\n    session = await conn.fetchrow(''''''\n        SELECT id, project_id, design_job_id, status, current_stage, progress_percentage, created_at\n        FROM tech_spec_sessions\n        WHERE id = ''c125ef32-7a34-484f-97ad-749d88365ccd''\n    '''''')\n    \n    print(''Tech Spec Session:'')\n    for key, value in dict(session).items():\n        print(f''  {key}: {value}'')\n    \n    await conn.close()\n\nasyncio.run(check_session())\n\")"
     ],
     "deny": [],
     "ask": []

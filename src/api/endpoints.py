@@ -131,7 +131,7 @@ async def start_tech_spec(
             design_job_id=str(request.design_job_id),
             prd_content=prd_content,
             design_docs=design_docs,
-            google_ai_studio_code_path=None  # Will be provided later if available
+            ai_studio_code_path=None  # Will be provided later if available
         )
 
         logger.info(
