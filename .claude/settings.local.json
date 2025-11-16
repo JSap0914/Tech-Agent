@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(cat:*)",
+      "Bash(python -m venv:*)",
+      "mcp__serena__list_dir",
+      "mcp__serena__check_onboarding_performed",
+      "mcp__serena__list_memories",
+      "mcp__serena__find_file",
+      "mcp__serena__onboarding",
+      "Bash(git --version:*)",
+      "mcp__serena__write_memory",
+      "mcp__serena__find_symbol",
+      "mcp__serena__get_symbols_overview",
+      "Bash(python -m pytest:*)",
+      "Bash(pyenv --version:*)",
+      "Bash(py --list)",
+      "Bash(where:*)",
+      "Bash(pip show:*)",
+      "Bash(pip install:*)",
+      "Bash(python -c:*)",
+      "Bash(pytest:*)",
+      "mcp__serena__replace_symbol_body",
+      "mcp__serena__search_for_pattern",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

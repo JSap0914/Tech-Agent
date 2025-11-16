@@ -1,0 +1,13 @@
+Generic single-database configuration for Tech Spec Agent.
+
+To create a new migration:
+    alembic revision --autogenerate -m "Description of changes"
+
+To upgrade database:
+    alembic upgrade head
+
+To downgrade one version:
+    alembic downgrade -1
+
+To view migration history:
+    alembic history

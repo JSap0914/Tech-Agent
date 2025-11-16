@@ -1,0 +1,86 @@
+graph LR
+    subgraph Phase1["🔵 Phase 1: 입력 및 분석<br/>━━━━━━━━━━━━━━━━<br/>진행률: 0% → 25%<br/>소요 시간: 2-3분"]
+        N1["1️⃣ load_inputs<br/>PRD/디자인 로드"]
+        N2["2️⃣ analyze_completeness<br/>완전성 분석<br/>0-100점"]
+        N2_1["2-1️⃣ ask_clarification<br/>사용자 질문<br/>(필요시)"]
+        N3["3️⃣ identify_tech_gaps<br/>기술 Gap 탐지"]
+        
+        N1 --> N2
+        N2 --> N2_1
+        N2_1 --> N2
+        N2 --> N3
+    end
+    
+    subgraph Phase2["🟠 Phase 2: 기술 조사 및 선택<br/>━━━━━━━━━━━━━━━━<br/>진행률: 25% → 50%<br/>소요 시간: 10-20분<br/>⚠️ Gap 개수에 따라 반복"]
+        N4["4️⃣ research_technologies<br/>웹 검색<br/>오픈소스 조사"]
+        N5["5️⃣ present_options<br/>3가지 옵션 제시<br/>비교 표 생성"]
+        N6["6️⃣ wait_user_decision<br/>사용자 선택 대기<br/>WebSocket"]
+        N7["7️⃣ validate_decision<br/>선택 검증<br/>충돌 체크"]
+        N7_1["7-1️⃣ warn_user<br/>경고 표시<br/>(충돌시)"]
+        
+        N4 --> N5
+        N5 --> N6
+        N6 --> N7
+        N7 --> N7_1
+        N7_1 --> N5
+        N7 --> N4
+    end
+    
+    subgraph Phase3["🟣 Phase 3: 코드 분석<br/>━━━━━━━━━━━━━━━━<br/>진행률: 50% → 65%<br/>소요 시간: 2-3분"]
+        N8["8️⃣ parse_ai_studio_code<br/>Google AI Studio<br/>코드 파싱"]
+        N9["9️⃣ infer_api_spec<br/>API 명세 추론<br/>컴포넌트 분석"]
+        
+        N8 --> N9
+    end
+    
+    subgraph Phase4["🟢 Phase 4: 문서 생성<br/>━━━━━━━━━━━━━━━━<br/>진행률: 65% → 100%<br/>소요 시간: 3-5분"]
+        N10["🔟 generate_trd<br/>TRD 생성<br/>Markdown"]
+        N11["1️⃣1️⃣ validate_trd<br/>품질 검증<br/>90점 이상"]
+        N12["1️⃣2️⃣ generate_api_spec<br/>API 명세서<br/>OpenAPI YAML"]
+        N13["1️⃣3️⃣ generate_db_schema<br/>DB 스키마<br/>SQL DDL"]
+        N14["1️⃣4️⃣ generate_architecture<br/>아키텍처<br/>Mermaid"]
+        N15["1️⃣5️⃣ generate_tech_stack<br/>기술 스택 문서<br/>Markdown"]
+        N16["1️⃣6️⃣ save_to_db<br/>PostgreSQL 저장<br/>5종 문서"]
+        N17["1️⃣7️⃣ notify_next_agent<br/>백로그 Agent<br/>트리거"]
+        
+        N10 --> N11
+        N11 --> N10
+        N11 --> N12
+        N12 --> N13
+        N13 --> N14
+        N14 --> N15
+        N15 --> N16
+        N16 --> N17
+    end
+    
+    Phase1 ==>|완전성 양호<br/>Gap 발견| Phase2
+    Phase2 ==>|모든 기술 선택 완료| Phase3
+    Phase3 ==>|API 추론 완료| Phase4
+    
+    style Phase1 fill:#e3f2fd,stroke:#2196f3,stroke-width:3px
+    style Phase2 fill:#fff3e0,stroke:#ff9800,stroke-width:3px
+    style Phase3 fill:#f3e5f5,stroke:#9c27b0,stroke-width:3px
+    style Phase4 fill:#e8f5e9,stroke:#4caf50,stroke-width:3px
+    
+    style N1 fill:#bbdefb,stroke:#1976d2
+    style N2 fill:#bbdefb,stroke:#1976d2
+    style N2_1 fill:#bbdefb,stroke:#1976d2
+    style N3 fill:#bbdefb,stroke:#1976d2
+    
+    style N4 fill:#ffe0b2,stroke:#f57c00
+    style N5 fill:#ffe0b2,stroke:#f57c00
+    style N6 fill:#ffe0b2,stroke:#f57c00
+    style N7 fill:#ffe0b2,stroke:#f57c00
+    style N7_1 fill:#ffe0b2,stroke:#f57c00
+    
+    style N8 fill:#e1bee7,stroke:#7b1fa2
+    style N9 fill:#e1bee7,stroke:#7b1fa2
+    
+    style N10 fill:#c8e6c9,stroke:#388e3c
+    style N11 fill:#c8e6c9,stroke:#388e3c
+    style N12 fill:#c8e6c9,stroke:#388e3c
+    style N13 fill:#c8e6c9,stroke:#388e3c
+    style N14 fill:#c8e6c9,stroke:#388e3c
+    style N15 fill:#c8e6c9,stroke:#388e3c
+    style N16 fill:#ffcdd2,stroke:#d32f2f
+    style N17 fill:#ffcdd2,stroke:#d32f2f

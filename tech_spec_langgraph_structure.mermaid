@@ -1,0 +1,99 @@
+graph TB
+    START([🚀 시작<br/>디자인 완료]) --> LOAD[1️⃣ load_inputs<br/>📥 PRD/디자인 로드<br/>━━━━━━━━━━<br/>입력: project_id<br/>출력: prd_content,<br/>design_docs]
+    
+    LOAD --> ANALYZE[2️⃣ analyze_completeness<br/>🔍 기획 완전성 분석<br/>━━━━━━━━━━<br/>입력: PRD, 디자인<br/>출력: completeness_score<br/>0-100점]
+    
+    ANALYZE --> CHECK_SCORE{❓ 완전성<br/>점수 >= 80?}
+    
+    CHECK_SCORE -->|❌ No<br/>점수 낮음| ASK_USER[2-1️⃣ ask_user_clarification<br/>💭 사용자 질문<br/>━━━━━━━━━━<br/>누락된 요소 확인<br/>모호한 부분 명확화]
+    
+    CHECK_SCORE -->|✅ Yes<br/>점수 양호| IDENTIFY
+    
+    ASK_USER -->|답변 반영| ANALYZE
+    
+    IDENTIFY[3️⃣ identify_tech_gaps<br/>🔎 기술 Gap 탐지<br/>━━━━━━━━━━<br/>입력: PRD, TRD<br/>출력: technical_gaps<br/>카테고리별 분류]
+    
+    IDENTIFY --> HAS_GAPS{❓ 기술 Gap<br/>존재?}
+    
+    HAS_GAPS -->|❌ No<br/>Gap 없음| PARSE_CODE
+    
+    HAS_GAPS -->|✅ Yes<br/>결정 필요| RESEARCH[4️⃣ research_technologies<br/>🌐 오픈소스 웹 검색<br/>━━━━━━━━━━<br/>web_search 도구 사용<br/>상위 5개 후보 추출<br/>상세 조사: GitHub stats,<br/>pros/cons, use cases]
+    
+    RESEARCH --> PRESENT[5️⃣ present_options<br/>📊 선택지 3개 제시<br/>━━━━━━━━━━<br/>비교 표 생성<br/>AI 추천 포함<br/>비개발자 친화적]
+    
+    PRESENT --> WAIT[6️⃣ wait_user_decision<br/>⏳ 사용자 선택 대기<br/>━━━━━━━━━━<br/>WebSocket 입력 대기<br/>옵션 1/2/3 선택<br/>또는 'AI 추천']
+    
+    WAIT --> VALIDATE_DECISION[7️⃣ validate_decision<br/>✅ 선택 검증<br/>━━━━━━━━━━<br/>PRD 요구사항 호환성<br/>다른 기술과 충돌 체크<br/>검증 점수 산정]
+    
+    VALIDATE_DECISION --> HAS_CONFLICT{❓ 충돌<br/>있음?}
+    
+    HAS_CONFLICT -->|⚠️ Yes<br/>문제 발견| WARN[7-1️⃣ warn_user<br/>⚠️ 경고 표시<br/>━━━━━━━━━━<br/>충돌 내용 설명<br/>심각도 표시<br/>재선택 or 계속]
+    
+    HAS_CONFLICT -->|✅ No<br/>문제 없음| MORE_GAPS
+    
+    WARN --> USER_CONFIRM{❓ 사용자<br/>결정?}
+    
+    USER_CONFIRM -->|🔄 재선택| PRESENT
+    USER_CONFIRM -->|➡️ 계속| MORE_GAPS
+    
+    MORE_GAPS{❓ 남은<br/>결정 있음?}
+    
+    MORE_GAPS -->|✅ Yes<br/>더 있음| RESEARCH
+    MORE_GAPS -->|❌ No<br/>완료| PARSE_CODE[8️⃣ parse_ai_studio_code<br/>💻 Google AI Studio 코드 분석<br/>━━━━━━━━━━<br/>ZIP 압축 해제<br/>React 컴포넌트 파싱<br/>Props, State, API 호출 추출]
+    
+    PARSE_CODE --> INFER_API[9️⃣ infer_api_spec<br/>🔮 API 명세 추론<br/>━━━━━━━━━━<br/>컴포넌트 → API 매핑<br/>fetch/axios 호출 분석<br/>엔드포인트 목록 생성]
+    
+    INFER_API --> GEN_TRD[🔟 generate_trd<br/>📝 TRD 생성<br/>━━━━━━━━━━<br/>모든 정보 종합<br/>Markdown 형식<br/>8개 섹션 구조화]
+    
+    GEN_TRD --> VALIDATE_TRD[1️⃣1️⃣ validate_trd<br/>✔️ TRD 검증<br/>━━━━━━━━━━<br/>완전성 체크<br/>일관성 체크<br/>품질 점수 산정]
+    
+    VALIDATE_TRD --> TRD_VALID{❓ TRD<br/>품질 >= 90?}
+    
+    TRD_VALID -->|❌ No<br/>재생성<br/>최대 3회| GEN_TRD
+    TRD_VALID -->|✅ Yes<br/>통과| GEN_API[1️⃣2️⃣ generate_api_spec<br/>📄 API 명세서 생성<br/>━━━━━━━━━━<br/>OpenAPI 3.0 형식<br/>모든 엔드포인트 상세<br/>요청/응답 스키마]
+    
+    GEN_API --> GEN_DB[1️⃣3️⃣ generate_db_schema<br/>🗄️ DB 스키마 생성<br/>━━━━━━━━━━<br/>SQL DDL 문<br/>테이블, 인덱스, 제약<br/>ERD Mermaid]
+    
+    GEN_DB --> GEN_ARCH[1️⃣4️⃣ generate_architecture<br/>🏗️ 아키텍처 다이어그램<br/>━━━━━━━━━━<br/>시스템 구성도<br/>데이터 흐름<br/>Mermaid 형식]
+    
+    GEN_ARCH --> GEN_TECH_STACK[1️⃣5️⃣ generate_tech_stack_doc<br/>📚 기술 스택 문서<br/>━━━━━━━━━━<br/>각 기술 선택 이유<br/>설정 가이드<br/>학습 리소스]
+    
+    GEN_TECH_STACK --> SAVE[1️⃣6️⃣ save_to_db<br/>💾 DB 저장<br/>━━━━━━━━━━<br/>5종 문서 저장<br/>generated_trd_documents<br/>ANYON documents 복사]
+    
+    SAVE --> NOTIFY[1️⃣7️⃣ notify_next_agent<br/>🔔 백로그 Agent 트리거<br/>━━━━━━━━━━<br/>이벤트 발행<br/>칸반보드 상태 변경<br/>완료 메시지]
+    
+    NOTIFY --> END([✨ 완료<br/>백로그 단계로])
+    
+    style START fill:#c8e6c9,stroke:#4caf50,stroke-width:3px
+    style END fill:#c8e6c9,stroke:#4caf50,stroke-width:3px
+    
+    style CHECK_SCORE fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
+    style HAS_GAPS fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
+    style HAS_CONFLICT fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
+    style MORE_GAPS fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
+    style TRD_VALID fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
+    style USER_CONFIRM fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
+    
+    style LOAD fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
+    style ANALYZE fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
+    style ASK_USER fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
+    style IDENTIFY fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
+    
+    style RESEARCH fill:#fff3e0,stroke:#ff9800,stroke-width:2px
+    style PRESENT fill:#fff3e0,stroke:#ff9800,stroke-width:2px
+    style WAIT fill:#fff3e0,stroke:#ff9800,stroke-width:2px
+    style VALIDATE_DECISION fill:#fff3e0,stroke:#ff9800,stroke-width:2px
+    style WARN fill:#fff3e0,stroke:#ff9800,stroke-width:2px
+    
+    style PARSE_CODE fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px
+    style INFER_API fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px
+    
+    style GEN_TRD fill:#e8f5e9,stroke:#4caf50,stroke-width:2px
+    style VALIDATE_TRD fill:#e8f5e9,stroke:#4caf50,stroke-width:2px
+    style GEN_API fill:#e8f5e9,stroke:#4caf50,stroke-width:2px
+    style GEN_DB fill:#e8f5e9,stroke:#4caf50,stroke-width:2px
+    style GEN_ARCH fill:#e8f5e9,stroke:#4caf50,stroke-width:2px
+    style GEN_TECH_STACK fill:#e8f5e9,stroke:#4caf50,stroke-width:2px
+    
+    style SAVE fill:#ffebee,stroke:#f44336,stroke-width:2px
+    style NOTIFY fill:#ffebee,stroke:#f44336,stroke-width:2px
