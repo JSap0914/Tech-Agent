@@ -13,12 +13,17 @@ The Tech Spec Agent is an AI-powered system that automatically generates Technic
 
 ### Key Features
 
-- **Automated TRD Generation**: Generate comprehensive technical specifications from PRDs
+- **Automated TRD Generation**: Generate comprehensive technical specifications from PRDs with Section 3: System Architecture
 - **Technology Research**: AI-powered research and recommendations for open-source libraries
 - **Interactive Decision-Making**: Real-time WebSocket communication for user technology selections
 - **Code Analysis**: Parse Google AI Studio code to infer API specifications
-- **Document Generation**: TRD, API specs (OpenAPI), DB schemas (SQL DDL), architecture diagrams (Mermaid)
-- **Quality Validation**: 90% quality threshold with iterative refinement
+- **Document Generation**:
+  - TRD with System Architecture section (textual description)
+  - API specifications (OpenAPI/Swagger YAML)
+  - Database schemas (SQL DDL + Mermaid ERD)
+  - **Architecture diagrams (Mermaid system flowcharts)**
+  - Technology stack documentation
+- **Quality Validation**: 90% quality threshold with specialized architecture review agent
 - **Design Agent Integration**: Seamless integration via shared PostgreSQL tables
 - **Production-Ready**: Monitoring, error recovery, and high availability
 
@@ -27,6 +32,7 @@ The Tech Spec Agent is an AI-powered system that automatically generates Technic
 ## Table of Contents
 
 - [Architecture](#architecture)
+- [Architecture Documentation](#architecture-documentation)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Configuration](#configuration)
@@ -53,7 +59,7 @@ The Tech Spec Agent is an AI-powered system that automatically generates Technic
 ┌────────────────────────────────────────────────────────────┐
 │              Tech Spec Agent (FastAPI)                      │
 │  ┌──────────────────────────────────────────────────┐     │
-│  │         LangGraph Workflow (19 Nodes)            │     │
+│  │         LangGraph Workflow (21 Nodes)            │     │
 │  └──────────────────────────────────────────────────┘     │
 └────────┬──────────────────────────┬───────────────────────┘
          │                          │
@@ -75,6 +81,78 @@ The Tech Spec Agent is an AI-powered system that automatically generates Technic
 - **Cache**: Redis 5.2+
 - **Monitoring**: Prometheus + Grafana
 - **Deployment**: Docker + docker-compose
+
+---
+
+## Architecture Documentation
+
+Tech Spec Agent automatically generates **THREE types of architecture documentation**:
+
+### 1. System Architecture Text (TRD Section 3)
+- Generated at 70% workflow completion
+- Textual description within the TRD document
+- Includes architecture pattern, components, data flow, scalability
+
+### 2. Database ERD (Mermaid)
+- Generated at 85% workflow completion
+- Mermaid Entity Relationship Diagram
+- Shows tables, relationships, foreign keys
+- Accompanies SQL DDL statements
+
+### 3. System Architecture Diagram (Mermaid)
+- Generated at 90% workflow completion
+- Validated at 92% workflow completion
+- Standalone Mermaid flowchart showing complete system topology:
+  - **Client Layer**: Web and mobile applications
+  - **API Gateway**: Load balancer with SSL/TLS
+  - **Application Layer**: Multiple API server instances + business services
+  - **Data Layer**: Primary database + read replicas + caching
+  - **External Services**: OAuth, file storage, email, push notifications
+  - **Monitoring**: Prometheus, Grafana, Sentry
+
+**Example Architecture Diagram Output:**
+```mermaid
+flowchart TB
+    subgraph Clients["Client Layer"]
+        WebApp["Next.js Web App"]
+        MobileApp["React Native App"]
+    end
+    subgraph Gateway["API Gateway"]
+        LB["NGINX Load Balancer"]
+    end
+    subgraph Application["Application Layer"]
+        API1["API Server 1"]
+        API2["API Server 2"]
+    end
+    subgraph DataLayer["Data Layer"]
+        DB["PostgreSQL Primary"]
+        DBRep["PostgreSQL Replica"]
+        Cache["Redis Cache"]
+    end
+
+    WebApp --> LB
+    MobileApp --> LB
+    LB --> API1
+    LB --> API2
+    API1 --> DB
+    API2 --> DBRep
+    DB -.-> DBRep
+    API1 --> Cache
+```
+
+**All architecture documents are validated** through:
+- **Structure checks**: Minimum 300 characters for TRD Section 3
+- **Database ERD validation**: All tables and relationships present
+- **Architecture quality review** (92% progress): Specialized AI agent scores 0-100 on:
+  - Completeness (30 points): All layers present
+  - Consistency (25 points): Matches selected technologies
+  - Best Practices (25 points): Load balancing, caching, replication
+  - Scalability (15 points): Horizontal scaling capability
+  - Security (5 points): Authentication, encryption
+- **Pass threshold**: >= 80/100 for architecture quality
+- **Overall TRD quality threshold**: >= 90/100
+
+**See `EXAMPLE_ARCHITECTURE_DIAGRAM.md` for a complete example output.**
 
 ---
 

@@ -788,14 +788,80 @@ Once configuration is complete:
 - `generated_trd_documents`
 - `agent_error_logs`
 
+### Architecture Documentation Outputs
+
+Tech Spec Agent automatically generates **THREE types of architecture documentation**:
+
+#### 1. System Architecture Text (TRD Section 3) - 70%
+- **Location**: Within `trd_content` column as Section 3
+- **Format**: Markdown text
+- **Contents**:
+  - Architecture pattern description (3-tier, microservices, etc.)
+  - Component breakdown and responsibilities
+  - Data flow between components
+  - Integration points with third-party services
+  - Scalability and fault tolerance strategies
+
+#### 2. Database ERD (Mermaid) - 85%
+- **Location**: `database_schema` JSONB column (ERD + SQL DDL)
+- **Format**: Mermaid Entity Relationship Diagram + SQL statements
+- **Contents**:
+  - Entity relationships
+  - Foreign keys
+  - Primary keys
+  - Table structure
+
+#### 3. System Architecture Diagram (Mermaid) - 90%
+- **Location**: `architecture_diagram` TEXT column
+- **Format**: Mermaid flowchart
+- **Contents**:
+  - Client applications (web, mobile)
+  - API gateway/layer
+  - Backend services
+  - Databases (primary + replicas)
+  - Caching layer (Redis)
+  - External services (OAuth, S3, etc.)
+
+#### Accessing Architecture Documents
+
+**Via REST API**:
+```bash
+GET /api/tech-spec/sessions/{session_id}/trd
+```
+
+**Response includes**:
+```json
+{
+  "document": {
+    "trd_content": "# TRD\n\n## 3. System Architecture\n...",
+    "architecture_diagram": "flowchart TB\n    A[Next.js] --> B[NestJS]...",
+    "database_schema": {
+      "ddl": "CREATE TABLE users...",
+      "erd": "erDiagram\n    USERS ||--o{ TASKS..."
+    },
+    ...
+  }
+}
+```
+
+**Quality Validation**:
+- Structure check: Section 3 exists with >= 300 characters
+- Architecture Agent review: Specialized LLM scores 0-100
+- Overall TRD score: >= 90/100 required
+
+**See `ARCHITECTURE_GENERATION_PROCESS.md` for complete visual workflow.**
+
+---
+
 ### Integration Points
 
 1. **Database Foreign Key**: `tech_spec_sessions.design_job_id → shared.design_jobs.job_id`
 2. **Data Flow**: Design Agent writes to `shared.design_outputs` → Tech Spec Agent reads via `design_agent_loader.py`
 3. **Workflow Handoff**: Design Agent completes → ANYON triggers Tech Spec Agent via REST API
+4. **Architecture Outputs**: Tech Spec Agent generates TRD + Architecture diagrams → Backlog Agent consumes
 
 ---
 
-**Configuration Status**: ✅ Ready for Integration (after fixing foreign key)
+**Configuration Status**: ✅ Ready for Integration (schema fixes applied)
 **Estimated Setup Time**: 2-3 hours (including testing)
 **Difficulty**: Medium

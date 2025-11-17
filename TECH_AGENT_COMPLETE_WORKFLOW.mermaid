@@ -1,0 +1,131 @@
+flowchart TB
+    Start([Start Tech Spec Session]) --> LoadInputs
+
+    %% ============= PHASE 1: Input & Analysis (0-25%) =============
+    subgraph Phase1["PHASE 1: Input & Analysis (0-25%)"]
+        LoadInputs[Load Inputs<br/>- PRD from Design Agent<br/>- Design Documents<br/>- Initial TRD]
+        LoadInputs --> AnalyzeCompleteness[Analyze Completeness<br/>Score: 0-100]
+
+        AnalyzeCompleteness --> CheckCompleteness{Completeness<br/>Score >= 80?}
+        CheckCompleteness -->|No| AskClarification[Ask User Clarification<br/>WebSocket Message]
+        AskClarification --> WaitUserResponse[Wait for User Response]
+        WaitUserResponse --> AnalyzeCompleteness
+
+        CheckCompleteness -->|Yes| IdentifyGaps[Identify Technology Gaps<br/>- Auth method?<br/>- Database?<br/>- File storage?<br/>- Real-time comm?]
+    end
+
+    %% ============= PHASE 2: Technology Research (25-50%) =============
+    subgraph Phase2["PHASE 2: Technology Research & Selection (25-50%)"]
+        IdentifyGaps --> CheckGaps{Any Tech<br/>Gaps Found?}
+
+        CheckGaps -->|Yes| ResearchTech[Research Technologies<br/>Web Search + AI Analysis<br/>Top 5 Candidates]
+        ResearchTech --> PresentOptions[Present Options to User<br/>Show Top 3 with:<br/>- Pros/Cons<br/>- GitHub Stars<br/>- Use Cases<br/>- AI Recommendation]
+
+        PresentOptions --> WaitDecision[Wait for User Decision<br/>WebSocket Interactive]
+        WaitDecision --> ValidateDecision[Validate Technology Choice<br/>Check Conflicts with PRD]
+
+        ValidateDecision --> HasConflict{Conflict<br/>Detected?}
+        HasConflict -->|Yes| WarnUser[Warn User<br/>Show Conflict Details]
+        WarnUser --> UserChoice{User Chooses<br/>Continue or<br/>Reselect?}
+        UserChoice -->|Reselect| PresentOptions
+        UserChoice -->|Continue| RecordDecision
+
+        HasConflict -->|No| RecordDecision[Record Decision<br/>Save to tech_research table]
+        RecordDecision --> CheckPending{More Pending<br/>Decisions?}
+        CheckPending -->|Yes| ResearchTech
+        CheckPending -->|No| AllGapsResolved
+
+        CheckGaps -->|No| AllGapsResolved[All Technology Gaps Resolved]
+    end
+
+    %% ============= PHASE 3: Code Analysis (50-65%) =============
+    subgraph Phase3["PHASE 3: Code Analysis (50-65%)"]
+        AllGapsResolved --> CheckCodePath{Google AI Studio<br/>Code Available?}
+
+        CheckCodePath -->|Yes| ParseCode[Parse AI Studio Code<br/>- Extract TypeScript AST<br/>- Find Components<br/>- Identify API Calls]
+        ParseCode --> InferAPI[Infer API Specifications<br/>- Endpoints from fetch/axios<br/>- Request/Response types<br/>- Authentication headers]
+
+        CheckCodePath -->|No| SkipCodeAnalysis[Skip Code Analysis<br/>Use PRD/Design Only]
+
+        InferAPI --> CodeAnalysisComplete[Code Analysis Complete]
+        SkipCodeAnalysis --> CodeAnalysisComplete
+    end
+
+    %% ============= PHASE 4: Document Generation (65-100%) =============
+    subgraph Phase4["PHASE 4: Document Generation (65-100%)"]
+        CodeAnalysisComplete --> GenerateTRD[Generate TRD Document<br/>70% Progress<br/>Includes:<br/>- Section 1: Overview<br/>- Section 2: Requirements<br/>- Section 3: System Architecture ⭐<br/>- Section 4: Tech Stack<br/>- Section 5: Implementation Plan]
+
+        GenerateTRD --> ValidateTRD[Validate TRD Quality<br/>AI Review Agent<br/>Score: 0-100]
+
+        ValidateTRD --> CheckTRDQuality{Quality Score<br/>>= 90?}
+        CheckTRDQuality -->|No| CheckRetries{Retry Count<br/>< 3?}
+        CheckRetries -->|Yes| RegenerateTRD[Regenerate TRD<br/>Improve Quality]
+        RegenerateTRD --> ValidateTRD
+        CheckRetries -->|No| ForcePass[Force Pass with Warning<br/>Flag for Human Review]
+
+        CheckTRDQuality -->|Yes| TRDComplete[TRD Complete]
+        ForcePass --> TRDComplete
+
+        TRDComplete --> GenerateAPI[Generate API Specification<br/>80% Progress<br/>OpenAPI/Swagger YAML<br/>- Endpoints<br/>- Request/Response Schemas<br/>- Authentication]
+
+        GenerateAPI --> GenerateDBSchema[Generate Database Schema<br/>85% Progress<br/>SQL DDL Statements]
+
+        GenerateDBSchema --> GenerateDBDiagram[Generate Database ERD<br/>85% Progress<br/>Mermaid Entity Relationship Diagram<br/>- Tables<br/>- Columns<br/>- Relationships<br/>- Foreign Keys]
+
+        GenerateDBDiagram --> GenerateArchDiagram[Generate System Architecture Diagram ⭐<br/>90% Progress<br/>Mermaid Flowchart<br/>- Client Layer<br/>- API Gateway<br/>- Application Servers<br/>- Databases + Replicas<br/>- Cache Layer<br/>- External Services<br/>- Monitoring Tools]
+
+        GenerateArchDiagram --> ValidateArchitecture[Validate Architecture<br/>Architecture Review Agent<br/>Check:<br/>- Completeness<br/>- Consistency<br/>- Best Practices<br/>- Scalability]
+
+        ValidateArchitecture --> GenerateTechStack[Generate Tech Stack Document<br/>95% Progress<br/>JSON Document<br/>- Dependencies<br/>- Versions<br/>- Configuration]
+
+        GenerateTechStack --> SaveToDB[Save All Documents to Database<br/>98% Progress<br/>Table: generated_trd_documents<br/>- trd_content<br/>- api_specification<br/>- database_schema<br/>- architecture_diagram ⭐<br/>- tech_stack_document]
+    end
+
+    %% ============= PHASE 5: Completion (100%) =============
+    subgraph Phase5["PHASE 5: Completion & Handoff (100%)"]
+        SaveToDB --> UpdateSession[Update Session Status<br/>status = 'completed'<br/>progress = 100%]
+
+        UpdateSession --> NotifyUser[Notify User via WebSocket<br/>Send Download Links]
+
+        NotifyUser --> NotifyBacklog[Notify Backlog Agent<br/>Webhook to Next Stage<br/>Pass TRD + Architecture]
+
+        NotifyBacklog --> End([Session Complete])
+    end
+
+    %% ============= Error Handling =============
+    LoadInputs -.->|Error| ErrorHandler[Error Handler]
+    AnalyzeCompleteness -.->|Error| ErrorHandler
+    ResearchTech -.->|Error| ErrorHandler
+    ParseCode -.->|Error| ErrorHandler
+    GenerateTRD -.->|Error| ErrorHandler
+    GenerateAPI -.->|Error| ErrorHandler
+    GenerateDBSchema -.->|Error| ErrorHandler
+    GenerateDBDiagram -.->|Error| ErrorHandler
+    GenerateArchDiagram -.->|Error| ErrorHandler
+    GenerateTechStack -.->|Error| ErrorHandler
+
+    ErrorHandler --> LogError[Log to agent_error_logs<br/>- Node name<br/>- Error type<br/>- Stack trace]
+    LogError --> CheckRecoverable{Recoverable<br/>Error?}
+    CheckRecoverable -->|Yes| RetryNode[Retry with Backoff]
+    CheckRecoverable -->|No| FailSession[Mark Session as Failed<br/>Notify User]
+
+    RetryNode -.->|Return to failed node| LoadInputs
+
+    %% ============= Styling =============
+    classDef phase1Style fill:#4A90E2,stroke:#2E5C8A,stroke-width:3px,color:#fff
+    classDef phase2Style fill:#50C878,stroke:#2E7D4E,stroke-width:3px,color:#fff
+    classDef phase3Style fill:#F39C12,stroke:#C87F0A,stroke-width:3px,color:#fff
+    classDef phase4Style fill:#9B59B6,stroke:#6C3483,stroke-width:3px,color:#fff
+    classDef phase5Style fill:#1ABC9C,stroke:#117A65,stroke-width:3px,color:#fff
+    classDef errorStyle fill:#E74C3C,stroke:#A93226,stroke-width:3px,color:#fff
+    classDef decisionStyle fill:#F1C40F,stroke:#B8860B,stroke-width:2px,color:#000
+    classDef architectureStyle fill:#FF1493,stroke:#C71585,stroke-width:4px,color:#fff,font-weight:bold
+
+    class LoadInputs,AnalyzeCompleteness,AskClarification,WaitUserResponse,IdentifyGaps phase1Style
+    class ResearchTech,PresentOptions,WaitDecision,ValidateDecision,WarnUser,RecordDecision,AllGapsResolved phase2Style
+    class ParseCode,InferAPI,SkipCodeAnalysis,CodeAnalysisComplete phase3Style
+    class GenerateTRD,ValidateTRD,TRDComplete,GenerateAPI,GenerateDBSchema,GenerateDBDiagram,GenerateTechStack,SaveToDB phase4Style
+    class GenerateArchDiagram,ValidateArchitecture architectureStyle
+    class UpdateSession,NotifyUser,NotifyBacklog phase5Style
+    class ErrorHandler,LogError,FailSession errorStyle
+    class CheckCompleteness,CheckGaps,HasConflict,UserChoice,CheckPending,CheckCodePath,CheckTRDQuality,CheckRetries,CheckRecoverable decisionStyle

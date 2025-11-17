@@ -45,14 +45,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - `infer_api_spec`: Infer API endpoints from React components
 
 4. **Phase 4: Document Generation (65-100%)**
-   - `generate_trd`: Create main TRD document
-   - `validate_trd`: Verify quality (>= 90 score, max 3 retries)
-   - `generate_api_spec`: OpenAPI YAML specification
-   - `generate_db_schema`: SQL DDL with ERD
-   - `generate_architecture`: Mermaid diagrams
-   - `generate_tech_stack_doc`: Technology stack documentation
-   - `save_to_db`: Persist all documents to PostgreSQL
-   - `notify_next_agent`: Trigger backlog agent
+   - `generate_trd`: Create main TRD document **with Section 3: System Architecture** (70%)
+   - `validate_trd`: Verify quality (>= 90 score, includes architecture review, max 3 retries) (75%)
+   - `generate_api_spec`: OpenAPI YAML specification (80%)
+   - `generate_db_schema`: SQL DDL **with Mermaid ERD** (85%)
+   - `generate_architecture`: **Mermaid system flowchart diagram** (90%)
+   - `generate_tech_stack_doc`: Technology stack documentation (95%)
+   - `save_to_db`: Persist all 5 documents to PostgreSQL (100%)
+   - `notify_next_agent`: Trigger backlog agent (100%)
 
 ### Conditional Branches
 
@@ -135,6 +135,93 @@ class TechSpecState(TypedDict):
 - Stores all 5 document types with versioning
 - Includes validation scores
 - Supports rollback to previous versions
+
+## Architecture Documentation Generation
+
+Tech Spec Agent generates **THREE types of architecture documentation** automatically:
+
+### 1. System Architecture Text (TRD Section 3) - 70%
+Generated within the TRD document as Section 3, includes:
+- Architecture pattern description (3-tier, microservices, etc.)
+- Component breakdown and responsibilities
+- Data flow between components
+- Integration points with third-party services
+- Scalability and fault tolerance strategies
+
+**Example**:
+```markdown
+## 3. System Architecture
+
+### 3.1 Architecture Pattern
+**3-Tier Architecture**: Presentation (Next.js), Application (NestJS), Data (PostgreSQL + Redis)
+
+### 3.2 Component Responsibilities
+- Next.js Frontend: UI, form validation, state management
+- NestJS API: Business logic, auth (JWT), authorization (RBAC)
+- PostgreSQL: Primary data store, ACID transactions
+- Redis: Session storage, API caching (TTL: 5min)
+
+### 3.3 Data Flow
+User → Next.js → NestJS API → Redis (cache check) → PostgreSQL → Response
+```
+
+### 2. Database ERD (Mermaid) - 85%
+Generated alongside SQL DDL statements, shows:
+- Entity relationships
+- Foreign keys
+- Primary keys
+- Table structure
+
+**Example**:
+```mermaid
+erDiagram
+    USERS ||--o{ TASKS : owns
+    USERS {
+        uuid id PK
+        string email UK
+        string password_hash
+    }
+    TASKS {
+        uuid id PK
+        uuid user_id FK
+        string title
+        string status
+    }
+```
+
+### 3. System Architecture Diagram (Mermaid) - 90%
+Standalone Mermaid flowchart showing complete system topology:
+- Client applications (web, mobile)
+- API gateway/layer
+- Backend services
+- Databases (primary + replicas)
+- Caching layer (Redis)
+- External services (OAuth, S3, etc.)
+
+**Example**:
+```mermaid
+flowchart TB
+    A[Next.js Web] --> B[NestJS API]
+    B --> C[(PostgreSQL)]
+    B --> D[(Redis Cache)]
+    B --> E[Google OAuth]
+    B --> F[AWS S3]
+```
+
+### Quality Validation
+All architecture documentation is validated through:
+- **Structure Check**: Verifies Section 3 exists with minimum 300 characters
+- **Architecture Agent Review**: Specialized LLM agent scores architecture quality (0-100)
+- **Consistency Check**: Ensures architecture diagram matches TRD Section 3
+- **Overall TRD Score**: Must be >= 90/100 to pass (architecture weighted 20%)
+
+### Storage
+All architecture documents stored in `generated_trd_documents` table:
+- `trd_content` (Text) - Full TRD including Section 3
+- `architecture_diagram` (Text) - Mermaid flowchart
+- `database_schema` (JSONB) - SQL DDL + ERD
+
+**See `ARCHITECTURE_GENERATION_PROCESS.md` for complete visual workflow.**
 
 ## Key Technologies
 

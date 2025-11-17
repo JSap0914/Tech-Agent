@@ -33,7 +33,9 @@ from src.langgraph.nodes.generation_nodes import (
     validate_trd_node,
     generate_api_spec_node,
     generate_db_schema_node,
+    generate_db_erd_node,
     generate_architecture_node,
+    validate_architecture_node,
     generate_tech_stack_doc_node
 )
 from src.langgraph.nodes.persistence_nodes import (
@@ -44,7 +46,7 @@ from src.langgraph.nodes.persistence_nodes import (
 
 def create_tech_spec_workflow(checkpointer: PostgresSaver = None) -> StateGraph:
     """
-    Create Tech Spec Agent LangGraph workflow with 19 nodes and 8 conditional branches.
+    Create Tech Spec Agent LangGraph workflow with 21 nodes and 8 conditional branches.
 
     **Workflow Structure:**
 
@@ -59,9 +61,11 @@ def create_tech_spec_workflow(checkpointer: PostgresSaver = None) -> StateGraph:
     - parse_ai_studio_code → infer_api_spec
 
     Phase 4: Document Generation (65-100%)
-    - generate_trd → validate_trd → generate_api_spec
-    - generate_db_schema → generate_architecture → generate_tech_stack_doc
-    - save_to_db → notify_next_agent → END
+    - generate_trd → validate_trd (70-75%) → generate_api_spec (80%)
+    - generate_db_schema (85%) → generate_db_erd (85%)
+    - generate_architecture (90%) → validate_architecture (92%)
+    - generate_tech_stack_doc (95%) → save_to_db (98%)
+    - notify_next_agent → END (100%)
 
     **Conditional Branches:**
     1. Completeness check: If score < 80 → ask_user_clarification
@@ -82,7 +86,7 @@ def create_tech_spec_workflow(checkpointer: PostgresSaver = None) -> StateGraph:
     workflow = StateGraph(TechSpecState)
 
     # =========================================================================
-    # 1. Add all 19 nodes
+    # 1. Add all 21 nodes
     # =========================================================================
 
     # Phase 1: Input & Analysis
@@ -107,7 +111,9 @@ def create_tech_spec_workflow(checkpointer: PostgresSaver = None) -> StateGraph:
     workflow.add_node("validate_trd", validate_trd_node)
     workflow.add_node("generate_api_spec", generate_api_spec_node)
     workflow.add_node("generate_db_schema", generate_db_schema_node)
+    workflow.add_node("generate_db_erd", generate_db_erd_node)
     workflow.add_node("generate_architecture", generate_architecture_node)
+    workflow.add_node("validate_architecture", validate_architecture_node)
     workflow.add_node("generate_tech_stack_doc", generate_tech_stack_doc_node)
 
     # Phase 5: Persistence & Notification
@@ -196,8 +202,10 @@ def create_tech_spec_workflow(checkpointer: PostgresSaver = None) -> StateGraph:
 
     # Remaining document generation (linear flow)
     workflow.add_edge("generate_api_spec", "generate_db_schema")
-    workflow.add_edge("generate_db_schema", "generate_architecture")
-    workflow.add_edge("generate_architecture", "generate_tech_stack_doc")
+    workflow.add_edge("generate_db_schema", "generate_db_erd")
+    workflow.add_edge("generate_db_erd", "generate_architecture")
+    workflow.add_edge("generate_architecture", "validate_architecture")
+    workflow.add_edge("validate_architecture", "generate_tech_stack_doc")
 
     # Phase 5: Persistence & Notification
     workflow.add_edge("generate_tech_stack_doc", "save_to_db")
