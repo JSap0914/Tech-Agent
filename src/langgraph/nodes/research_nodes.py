@@ -115,36 +115,40 @@ async def research_technologies_node(state: TechSpecState) -> TechSpecState:
                     "error": str(e)
                 }
 
-        # PARALLEL PROCESSING: Research all gaps concurrently
-        logger.info("Starting parallel research", gap_count=len(state["identified_gaps"]))
-        research_tasks = [_research_single_gap(gap) for gap in state["identified_gaps"]]
-        research_results = await asyncio.gather(*research_tasks, return_exceptions=True)
+        # SEQUENTIAL PROCESSING: Research gaps one at a time to avoid rate limiting
+        total_gaps = len(state["identified_gaps"])
+        logger.info("Starting sequential research", gap_count=total_gaps)
 
-        # Filter out any exception results and log them
-        valid_results = []
-        for i, result in enumerate(research_results):
-            if isinstance(result, Exception):
+        research_results = []
+        for i, gap in enumerate(state["identified_gaps"], 1):
+            logger.info(
+                "Researching technology gap",
+                gap_number=i,
+                total_gaps=total_gaps,
+                category=gap["category"]
+            )
+
+            try:
+                result = await _research_single_gap(gap)
+                research_results.append(result)
+            except Exception as e:
                 logger.error(
-                    "Research task failed with exception",
-                    gap_index=i,
-                    error=str(result)
+                    "Research failed",
+                    category=gap.get("category", "unknown"),
+                    gap_number=i,
+                    error=str(e)
                 )
                 # Add fallback error result
-                gap = state["identified_gaps"][i]
-                valid_results.append({
+                research_results.append({
                     "gap_id": gap.get("id", gap["category"]),
                     "category": gap["category"],
                     "description": gap["description"],
                     "priority": gap.get("priority", "medium"),
                     "options": [],
-                    "summary": f"Research failed: {str(result)}",
+                    "summary": f"Research failed: {str(e)}",
                     "recommendation": "Manual selection required",
-                    "error": str(result)
+                    "error": str(e)
                 })
-            else:
-                valid_results.append(result)
-
-        research_results = valid_results
 
         # Update state
         state["research_results"].extend(research_results)
@@ -229,6 +233,7 @@ async def present_options_node(state: TechSpecState) -> TechSpecState:
             state.update({
                 "paused": False,
                 "current_stage": "present_options",
+                "current_research_category": "",
                 "progress_percentage": 50.0,
                 "updated_at": datetime.now().isoformat()
             })

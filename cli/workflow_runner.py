@@ -32,6 +32,7 @@ from cli.terminal_ui import (
     console
 )
 from cli.decision_handler import DecisionHandler
+from cli.memory_profiler import start_memory_tracking, log_memory_snapshot, stop_memory_tracking
 
 logger = structlog.get_logger(__name__)
 
@@ -82,6 +83,10 @@ class CLIWorkflowRunner:
 
         display_session_info(session_id, project_id)
 
+        # Start memory profiling to debug GB-scale memory spikes
+        start_memory_tracking()
+        log_memory_snapshot("Workflow Start")
+
         try:
             # Register CLI decision callback so LangGraph nodes can block for input
             research_nodes.register_user_decision_callback(self._handle_user_decision_callback)
@@ -128,7 +133,8 @@ class CLIWorkflowRunner:
             # Disable checkpointing for CLI mode - resume not needed, saves 13GB memory
             # Checkpointing creates 44 state snapshots during 11-decision loop (4 nodes × 11 gaps)
             # Each snapshot is 200-300MB → 13.2GB total memory leak
-            config = None
+            # Set recursion_limit to 100 to handle 11 technology gaps (~55 node transitions total)
+            config = {"recursion_limit": 100}
 
             print_success("Workflow initialized successfully")
 
@@ -162,12 +168,19 @@ class CLIWorkflowRunner:
                     if node_name == "warn_user":
                         await self._handle_conflicts(node_output, config)
 
+                    # Log memory after each technology decision validation
+                    if node_name == "validate_decision":
+                        decisions_made = len(node_output.get("user_decisions", []))
+                        total_gaps = len(node_output.get("identified_gaps", []))
+                        log_memory_snapshot(f"After Decision {decisions_made}/{total_gaps}")
+
             # Workflow completed
             print_section("Workflow Completed")
 
             # Save generated documents
             await self._save_documents(self.current_state, output_dir)
 
+            stop_memory_tracking()
             print_success("Tech Spec generation completed successfully!")
             return True
 

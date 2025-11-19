@@ -271,7 +271,9 @@ def _check_options_to_present(state: TechSpecState) -> str:
 
     all_decided = gap_categories.issubset(decided_categories)
 
-    if all_decided and not pending and not current_category:
+    # Simplified logic: if all gaps have decisions, exit the loop
+    # No need to check pending/current_category as they're derived from all_decided
+    if all_decided:
         return "no_options"
 
     return "has_options"

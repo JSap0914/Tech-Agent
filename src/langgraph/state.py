@@ -35,11 +35,11 @@ class TechSpecState(TypedDict):
 
     # ============= Technology Research =============
     # Accumulates research results across multiple categories
-    research_results: Annotated[List[Dict], operator.add]
+    research_results: List[Dict]
     # {category: [options]} - Current options for presentation
     technology_options: Dict[str, List[Dict]]
     # Accumulates user decisions
-    user_decisions: Annotated[List[Dict], operator.add]
+    user_decisions: List[Dict]
     # Current category being researched
     current_research_category: str
     # Decision validation warnings
@@ -75,12 +75,12 @@ class TechSpecState(TypedDict):
 
     # ============= Error Handling =============
     # Accumulates errors across nodes
-    errors: Annotated[List[Dict], operator.add]  # [{node, error_type, message, timestamp}]
+    errors: List[Dict]  # [{node, error_type, message, timestamp}]
     retry_count: Dict[str, int]  # {node_name: retry_count}
 
     # ============= Conversation History =============
     # Accumulates all conversation messages
-    conversation_history: Annotated[List[Dict], operator.add]
+    conversation_history: List[Dict]
     # [{role, message, timestamp, metadata}]
 
     # ============= Metadata =============
